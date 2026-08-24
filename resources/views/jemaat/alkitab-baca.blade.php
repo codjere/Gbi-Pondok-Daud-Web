@@ -88,10 +88,48 @@
 
 @push('scripts')
 <script>
+// Initialize speech synthesis
 let speechSynthesis = window.speechSynthesis;
 let speechUtterance = null;
 let isSpeaking = false;
 let speechRate = 1;
+let currentChunkIndex = 0;
+let textChunks = [];
+let isPaused = false;
+
+// Check browser support
+if (!('speechSynthesis' in window)) {
+    console.error('Browser tidak mendukung Web Speech API');
+    document.getElementById('speechBtn').disabled = true;
+    document.getElementById('speechBtn').textContent = 'Tidak Didukung';
+}
+
+// Split text into smaller chunks to avoid interruption
+function splitTextIntoChunks(text, maxChunkLength = 200) {
+    const chunks = [];
+    const sentences = text.split(/[.!?]+/);
+    let currentChunk = '';
+    
+    sentences.forEach(sentence => {
+        if (sentence.trim()) {
+            const sentenceWithPunctuation = sentence.trim() + '. ';
+            if ((currentChunk + sentenceWithPunctuation).length <= maxChunkLength) {
+                currentChunk += sentenceWithPunctuation;
+            } else {
+                if (currentChunk) {
+                    chunks.push(currentChunk.trim());
+                }
+                currentChunk = sentenceWithPunctuation;
+            }
+        }
+    });
+    
+    if (currentChunk) {
+        chunks.push(currentChunk.trim());
+    }
+    
+    return chunks;
+}
 
 // Get all verse text for reading
 function getBibleText() {
@@ -104,18 +142,23 @@ function getBibleText() {
 }
 
 function toggleSpeech() {
+    if (!speechSynthesis) {
+        alert('Browser Anda tidak mendukung fitur text-to-speech');
+        return;
+    }
+    
     if (isSpeaking) {
-        speechSynthesis.pause();
-        isSpeaking = false;
-        updateSpeechButton(false);
-    } else {
-        if (speechSynthesis.paused) {
+        if (isPaused) {
             speechSynthesis.resume();
-            isSpeaking = true;
+            isPaused = false;
             updateSpeechButton(true);
         } else {
-            startSpeech();
+            speechSynthesis.pause();
+            isPaused = true;
+            updateSpeechButton(false);
         }
+    } else {
+        startSpeech();
     }
 }
 
@@ -127,38 +170,99 @@ function startSpeech() {
 
     // Cancel any ongoing speech
     speechSynthesis.cancel();
-
-    const text = getBibleText();
-    speechUtterance = new SpeechSynthesisUtterance(text);
+    isPaused = false;
     
-    // Set language to Indonesian
+    // Get text and split into chunks
+    const text = getBibleText();
+    
+    if (!text || text.trim() === '') {
+        alert('Tidak ada teks untuk dibacakan');
+        return;
+    }
+    
+    console.log('Memulai pembacaan dengan chunking...');
+    
+    // Split text into chunks
+    textChunks = splitTextIntoChunks(text, 150);
+    currentChunkIndex = 0;
+    
+    console.log(`Total chunks: ${textChunks.length}`);
+    
+    // Start speaking first chunk
+    speakNextChunk();
+}
+
+function speakNextChunk() {
+    if (currentChunkIndex >= textChunks.length) {
+        console.log('Semua chunks selesai');
+        isSpeaking = false;
+        updateSpeechButton(false);
+        return;
+    }
+    
+    const chunk = textChunks[currentChunkIndex];
+    console.log(`Membacakan chunk ${currentChunkIndex + 1}/${textChunks.length}:`, chunk.substring(0, 30) + '...');
+    
+    speechUtterance = new SpeechSynthesisUtterance(chunk);
+    
+    // Settings
     speechUtterance.lang = 'id-ID';
     speechUtterance.rate = speechRate;
     speechUtterance.pitch = 1;
+    speechUtterance.volume = 1;
 
     // Events
     speechUtterance.onstart = () => {
-        isSpeaking = true;
-        updateSpeechButton(true);
+        if (currentChunkIndex === 0) {
+            console.log('Pembacaan dimulai');
+            isSpeaking = true;
+            updateSpeechButton(true);
+        }
     };
 
     speechUtterance.onend = () => {
-        isSpeaking = false;
-        updateSpeechButton(false);
+        console.log(`Chunk ${currentChunkIndex + 1} selesai`);
+        currentChunkIndex++;
+        
+        // Small delay before next chunk
+        setTimeout(() => {
+            if (isSpeaking && !isPaused) {
+                speakNextChunk();
+            }
+        }, 100);
     };
 
-    speechUtterance.onerror = () => {
-        isSpeaking = false;
-        updateSpeechButton(false);
+    speechUtterance.onerror = (event) => {
+        console.error('Speech error pada chunk', currentChunkIndex + 1, ':', event.error);
+        
+        // Try to continue to next chunk even if current one fails
+        if (event.error === 'interrupted' || event.error === 'canceled') {
+            console.log('Error interrupt/cancel, lanjut ke chunk berikutnya');
+            currentChunkIndex++;
+            setTimeout(() => {
+                if (isSpeaking && !isPaused) {
+                    speakNextChunk();
+                }
+            }, 200);
+        } else {
+            isSpeaking = false;
+            updateSpeechButton(false);
+            alert('Terjadi kesalahan saat pembacaan: ' + event.error);
+        }
     };
 
     speechSynthesis.speak(speechUtterance);
 }
 
 function stopSpeech() {
-    speechSynthesis.cancel();
-    isSpeaking = false;
-    updateSpeechButton(false);
+    if (speechSynthesis) {
+        speechSynthesis.cancel();
+        isSpeaking = false;
+        isPaused = false;
+        currentChunkIndex = 0;
+        updateSpeechButton(false);
+        console.log('Pembacaan dihentikan');
+    }
 }
 
 function updateSpeechRate() {
@@ -166,8 +270,17 @@ function updateSpeechRate() {
     document.getElementById('rateValue').textContent = speechRate + 'x';
     
     if (isSpeaking) {
+        // Need to restart with new rate
+        const wasPaused = isPaused;
         stopSpeech();
-        startSpeech();
+        setTimeout(() => {
+            startSpeech();
+            if (wasPaused) {
+                speechSynthesis.pause();
+                isPaused = true;
+                updateSpeechButton(false);
+            }
+        }, 200);
     }
 }
 
@@ -183,7 +296,7 @@ function updateSpeechButton(speaking) {
         btn.classList.add('bg-amber-500', 'text-white');
     } else {
         icon.className = 'fa-solid fa-play mr-1';
-        text.textContent = 'Lanjut Baca';
+        text.textContent = 'Mulai Baca';
         btn.classList.remove('bg-amber-500', 'text-white');
         btn.classList.add('bg-gold', 'text-forest');
     }
@@ -212,7 +325,6 @@ function markAsComplete() {
             btn.classList.add('bg-emerald-500', 'text-white', 'cursor-default');
             btn.disabled = true;
             
-            // Show notification
             alert(data.message);
         }
     })
@@ -226,6 +338,17 @@ function markAsComplete() {
 window.addEventListener('beforeunload', () => {
     if (speechSynthesis) {
         speechSynthesis.cancel();
+    }
+});
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Halaman dimuat, text-to-speech siap');
+    
+    if (speechSynthesis) {
+        console.log('Web Speech API tersedia');
+    } else {
+        console.error('Web Speech API tidak tersedia');
     }
 });
 </script>
