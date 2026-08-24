@@ -17,9 +17,10 @@
                 <p class="text-[10px] font-medium text-stone-400">Portal Jemaat</p>
             </div>
         </div>
-        <div class="flex items-center gap-3">
-            <a href="{{ route('login') }}" class="rounded-xl px-5 py-2.5 text-sm font-semibold text-forest transition hover:bg-forest/5">Masuk</a>
-            <a href="{{ route('register') }}" class="rounded-xl bg-forest px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-forest/20 transition hover:bg-forest-mid">Daftar Jemaat</a>
+        <div class="flex items-center gap-2 sm:gap-3">
+            <a href="{{ route('about') }}" class="rounded-xl px-4 py-2.5 text-sm font-semibold text-forest transition hover:bg-forest/5 sm:px-5">Tentang Kami</a>
+            <a href="{{ route('login') }}" class="rounded-xl px-4 py-2.5 text-sm font-semibold text-forest transition hover:bg-forest/5 sm:px-5">Masuk</a>
+            <a href="{{ route('register') }}" class="rounded-xl bg-forest px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-forest/20 transition hover:bg-forest-mid sm:px-5">Daftar Jemaat</a>
         </div>
     </nav>
 
@@ -41,6 +42,9 @@
                 </a>
                 <a href="{{ route('login') }}" class="inline-flex items-center gap-2 rounded-2xl bg-white px-7 py-3.5 text-sm font-bold text-forest ring-1 ring-stone-200 transition hover:-translate-y-0.5">
                     <i class="fa-solid fa-arrow-right-to-bracket"></i> Login
+                </a>
+                <a href="{{ route('about') }}" class="inline-flex items-center gap-2 rounded-2xl bg-gold-soft px-7 py-3.5 text-sm font-bold text-forest transition hover:-translate-y-0.5">
+                    <i class="fa-solid fa-church"></i> Tentang Kami
                 </a>
             </div>
         </div>

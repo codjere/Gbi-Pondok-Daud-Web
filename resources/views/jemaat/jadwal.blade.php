@@ -43,6 +43,9 @@
                             {{ $jadwal->jamMulaiFormatted() }} — {{ $jadwal->jamSelesaiFormatted() }} WIB · {{ $jadwal->lokasi }}
                         </p>
                         <p class="text-xs text-stone-400">Pembicara: {{ $jadwal->pembicara }}</p>
+                        @if ($jadwal->deskripsi)
+                            <p class="mt-2 text-xs text-stone-500 italic">{{ $jadwal->deskripsi }}</p>
+                        @endif
                     </div>
                 </div>
                 <div class="sm:w-48">

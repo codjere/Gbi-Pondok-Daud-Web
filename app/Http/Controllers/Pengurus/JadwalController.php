@@ -19,6 +19,7 @@ class JadwalController extends Controller
     {
         $data = $request->validate([
             'nama_sesi' => ['required', 'string', 'max:255'],
+            'deskripsi' => ['nullable', 'string', 'max:1000'],
             'tanggal' => ['required', 'date'],
             'jam_mulai' => ['required'],
             'jam_selesai' => ['required', 'after:jam_mulai'],

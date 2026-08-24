@@ -13,6 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
+            'verified.otp' => \App\Http\Middleware\EnsureEmailIsVerified::class,
+            'session.expiration' => \App\Http\Middleware\HandleSessionExpiration::class,
         ]);
 
         $middleware->redirectGuestsTo('/login');

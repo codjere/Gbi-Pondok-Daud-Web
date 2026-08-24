@@ -55,6 +55,7 @@
 
             <p class="mt-6 text-center text-sm text-stone-500">
                 Belum punya akun? <a href="{{ route('register') }}" class="font-bold text-forest hover:underline">Daftar sekarang</a>
+                · <a href="{{ route('about') }}" class="font-bold text-forest hover:underline">Tentang Kami</a>
             </p>
         </div>
     </div>

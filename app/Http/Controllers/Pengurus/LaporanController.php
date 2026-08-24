@@ -12,7 +12,9 @@ class LaporanController extends Controller
     public function index(Request $request)
     {
         $jadwals = JadwalIbadah::orderByDesc('tanggal')->get();
-        $selectedId = $request->get('jadwal_id', $jadwals->first()?->id);
+        $selectedId = $request->validate([
+            'jadwal_id' => ['nullable', 'integer', 'exists:jadwal_ibadah,id'],
+        ])['jadwal_id'] ?? $jadwals->first()?->id;
 
         $jadwal = $selectedId
             ? JadwalIbadah::find($selectedId)

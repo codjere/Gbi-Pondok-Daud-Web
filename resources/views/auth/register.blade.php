@@ -36,10 +36,10 @@
                 <div>
                     <label for="status" class="mb-1.5 block text-sm font-semibold text-stone-700">Status Keanggotaan</label>
                     <select id="status" name="status" required class="w-full rounded-xl bg-white px-4 py-3 text-sm ring-1 ring-stone-200 outline-none">
-                        <option value="jemaat" @selected(old('status') === 'jemaat')>Jemaat</option>
+                        <option value="jemaat" @selected(old('status', 'jemaat') === 'jemaat')>Jemaat</option>
                         <option value="pelayan" @selected(old('status') === 'pelayan')>Pelayan</option>
-                        <option value="pengurus" @selected(old('status') === 'pengurus')>Pengurus</option>
                     </select>
+                    <p class="mt-1.5 text-xs text-stone-400">Pelayan bisa mendaftar di sini. Akun pengurus hanya dibuat oleh admin gereja.</p>
                 </div>
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>

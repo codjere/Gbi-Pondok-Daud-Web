@@ -32,14 +32,14 @@ class KuesionerController extends Controller
         $data = $request->validate([
             'usia' => ['required', 'integer', 'min:15', 'max:80'],
             'jenis_kelamin' => ['required', 'in:L,P'],
-            'kecamatan' => ['required', 'string', 'max:100'],
+            'kecamatan' => ['required', 'in:'.implode(',', $this->kecamatanOptions())],
             'alamat' => ['nullable', 'string', 'max:255'],
             'minat' => ['required', 'array', 'min:1'],
-            'minat.*' => ['string'],
+            'minat.*' => ['in:'.implode(',', array_keys($this->minatOptions()))],
             'bakat' => ['required', 'array', 'min:1'],
-            'bakat.*' => ['string'],
+            'bakat.*' => ['in:'.implode(',', array_keys($this->bakatOptions()))],
             'ketersediaan_hari' => ['required', 'array', 'min:1'],
-            'ketersediaan_hari.*' => ['string'],
+            'ketersediaan_hari.*' => ['in:'.implode(',', array_keys($this->hariOptions()))],
             'ketersediaan_waktu' => ['required', 'in:pagi,siang,sore,malam,fleksibel'],
         ]);
 

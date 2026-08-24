@@ -73,6 +73,29 @@
                         @endforelse
                     </select>
                 </div>
+
+                {{-- Manual Attendance Form --}}
+                <div class="mt-4 rounded-2xl bg-white p-4 ring-1 ring-stone-200/80">
+                    <p class="mb-3 text-sm font-bold text-forest">Absen Manual</p>
+                    <form action="{{ route('pengurus.absen.manual') }}" method="POST" class="grid gap-3 sm:grid-cols-2">
+                        @csrf
+                        <input type="hidden" name="jadwal_id" id="manualJadwalId">
+                        <div>
+                            <label class="mb-1 block text-xs font-semibold text-stone-500">Jemaat</label>
+                            <select name="user_id" required class="w-full rounded-xl bg-cream px-3 py-2.5 text-sm ring-1 ring-stone-200 outline-none">
+                                <option value="">Pilih jemaat...</option>
+                                @foreach (App\Models\User::all() as $user)
+                                    <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->role }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button type="submit" class="w-full rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-forest hover:bg-gold-soft">
+                                <i class="fa-solid fa-user-check mr-1"></i> Input Absen Manual
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             {{-- Log absen --}}
@@ -230,7 +253,10 @@
         }
     });
 
-    jadwalSelect.addEventListener('change', refreshList);
+    jadwalSelect.addEventListener('change', () => {
+        document.getElementById('manualJadwalId').value = jadwalSelect.value;
+        refreshList();
+    });
     initCamera();
     refreshList();
 })();

@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             'password' => 'password123',
             'role' => 'pengurus',
             'has_biometric' => true,
+            'email_verified_at' => now(),
             'face_embedding' => $this->mockEmbedding(),
         ]);
 
@@ -49,6 +50,7 @@ class DatabaseSeeder extends Seeder
             'password' => 'password123',
             'role' => 'jemaat',
             'has_biometric' => true,
+            'email_verified_at' => now(),
             'face_embedding' => $this->mockEmbedding(),
         ]));
 
@@ -192,6 +194,8 @@ class DatabaseSeeder extends Seeder
                 'published_at' => now()->subDays($i),
             ]);
         }
+
+        $this->call(ExtraDemoSeeder::class);
     }
 
     private function mockEmbedding(): array

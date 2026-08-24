@@ -17,7 +17,7 @@ class PermohonanDoaController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'pokok' => ['required', 'string', 'min:10'],
+            'pokok' => ['required', 'string', 'min:10', 'max:2000'],
             'anonim' => ['required', 'in:0,1'],
         ]);
 

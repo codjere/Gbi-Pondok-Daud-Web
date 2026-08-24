@@ -18,6 +18,7 @@ class User extends Authenticatable
         'role',
         'face_embedding',
         'has_biometric',
+        'email_verified_at',
     ];
 
     protected $hidden = [
@@ -89,6 +90,16 @@ class User extends Authenticatable
     public function chatConversations(): HasMany
     {
         return $this->hasMany(ChatConversation::class);
+    }
+
+    public function readingProgress(): HasMany
+    {
+        return $this->hasMany(UserReadingProgress::class);
+    }
+
+    public function readingHistory(): HasMany
+    {
+        return $this->hasMany(UserReadingHistory::class);
     }
 
     public function initials(): string

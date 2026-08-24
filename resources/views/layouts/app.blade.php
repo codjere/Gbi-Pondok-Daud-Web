@@ -39,9 +39,11 @@
         $activeRoute = $activeRoute ?? (request()->route()?->getName() ?? '');
         $jemaatMenu = [
             ['label' => 'Beranda',             'icon' => 'fa-house',           'route' => 'dashboard',        'url' => route('dashboard')],
+            ['label' => 'Tentang Kami',        'icon' => 'fa-church',          'route' => 'about',            'url' => route('about')],
             ['label' => 'Jadwal Ibadah',       'icon' => 'fa-calendar-days',   'route' => 'jemaat.jadwal',    'url' => route('jemaat.jadwal')],
             ['label' => 'Reservasi Kehadiran', 'icon' => 'fa-ticket',          'route' => 'jemaat.reservasi', 'url' => route('jemaat.reservasi')],
             ['label' => 'Permohonan Doa',      'icon' => 'fa-hands-praying',   'route' => 'jemaat.doa',       'url' => route('jemaat.doa')],
+            ['label' => 'Alkitab Digital',     'icon' => 'fa-bible',           'route' => 'jemaat.alkitab',   'url' => route('jemaat.alkitab')],
             ['label' => 'Renungan & Warta',    'icon' => 'fa-book-open',       'route' => 'jemaat.warta',     'url' => route('jemaat.warta')],
             ['label' => 'Kuesioner Profil',    'icon' => 'fa-clipboard-list',  'route' => 'jemaat.kuesioner', 'url' => route('jemaat.kuesioner')],
             ['label' => 'Rekomendasi AI',      'icon' => 'fa-wand-magic-sparkles', 'route' => 'jemaat.rekomendasi', 'url' => route('jemaat.rekomendasi')],

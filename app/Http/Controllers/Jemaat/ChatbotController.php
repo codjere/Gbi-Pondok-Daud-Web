@@ -41,7 +41,9 @@ class ChatbotController extends Controller
         ]);
 
         $conversation = isset($data['conversation_id'])
-            ? ChatConversation::where('user_id', Auth::id())->findOrFail($data['conversation_id'])
+            ? ChatConversation::where('user_id', Auth::id())
+                ->whereKey($data['conversation_id'])
+                ->firstOrFail()
             : ChatConversation::create([
                 'user_id' => Auth::id(),
                 'title' => substr($data['message'], 0, 50),

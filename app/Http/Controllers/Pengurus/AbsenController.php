@@ -7,8 +7,10 @@ use App\Models\JadwalIbadah;
 use App\Models\Kehadiran;
 use App\Models\User;
 use App\Services\FaceRecognitionService;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AbsenController extends Controller
@@ -76,9 +78,29 @@ class AbsenController extends Controller
             ]);
         }
 
-        $alreadyCheckedIn = Kehadiran::where('user_id', $match['user_id'])
-            ->where('jadwal_ibadah_id', $data['jadwal_id'])
-            ->exists();
+        try {
+            $alreadyCheckedIn = DB::transaction(function () use ($match, $data) {
+                $exists = Kehadiran::where('user_id', $match['user_id'])
+                    ->where('jadwal_ibadah_id', $data['jadwal_id'])
+                    ->lockForUpdate()
+                    ->exists();
+
+                if ($exists) {
+                    return true;
+                }
+
+                Kehadiran::create([
+                    'user_id' => $match['user_id'],
+                    'jadwal_ibadah_id' => $data['jadwal_id'],
+                    'waktu_checkin' => now(),
+                    'metode_verifikasi' => 'facenet',
+                ]);
+
+                return false;
+            });
+        } catch (UniqueConstraintViolationException) {
+            $alreadyCheckedIn = true;
+        }
 
         if ($alreadyCheckedIn) {
             return response()->json([
@@ -90,13 +112,6 @@ class AbsenController extends Controller
                 'message' => "{$match['name']} sudah absen untuk sesi ini.",
             ]);
         }
-
-        Kehadiran::create([
-            'user_id' => $match['user_id'],
-            'jadwal_ibadah_id' => $data['jadwal_id'],
-            'waktu_checkin' => now(),
-            'metode_verifikasi' => 'facenet',
-        ]);
 
         return response()->json([
             'success' => true,
@@ -125,5 +140,63 @@ class AbsenController extends Controller
             ]);
 
         return response()->json(['data' => $kehadiran]);
+    }
+
+    public function manual(Request $request)
+    {
+        $data = $request->validate([
+            'jadwal_id' => ['required', 'exists:jadwal_ibadah,id'],
+            'user_id' => ['required', 'exists:users,id'],
+        ]);
+
+        try {
+            $alreadyCheckedIn = DB::transaction(function () use ($data) {
+                $exists = Kehadiran::where('user_id', $data['user_id'])
+                    ->where('jadwal_ibadah_id', $data['jadwal_id'])
+                    ->lockForUpdate()
+                    ->exists();
+
+                if ($exists) {
+                    return true;
+                }
+
+                Kehadiran::create([
+                    'user_id' => $data['user_id'],
+                    'jadwal_ibadah_id' => $data['jadwal_id'],
+                    'waktu_checkin' => now(),
+                    'metode_verifikasi' => 'manual',
+                ]);
+
+                return false;
+            });
+        } catch (UniqueConstraintViolationException) {
+            $alreadyCheckedIn = true;
+        }
+
+        if ($alreadyCheckedIn) {
+            return back()->with('error', 'Jemaat ini sudah absen untuk sesi ini.');
+        }
+
+        return back()->with('success', 'Absen manual berhasil ditambahkan.');
+    }
+
+    public function participants(Request $request)
+    {
+        $data = $request->validate([
+            'jadwal_id' => ['required', 'exists:jadwal_ibadah,id'],
+        ]);
+
+        $jadwal = JadwalIbadah::findOrFail($data['jadwal_id']);
+
+        // Get all reservations for this session
+        $reservations = $jadwal->reservasi()->with('user')->get();
+
+        // Get all attendance records for this session
+        $attendance = $jadwal->kehadiran()->with('user')->get();
+
+        // Get all users who could potentially attend
+        $allUsers = User::all();
+
+        return view('pengurus.participants', compact('jadwal', 'reservations', 'attendance', 'allUsers'));
     }
 }

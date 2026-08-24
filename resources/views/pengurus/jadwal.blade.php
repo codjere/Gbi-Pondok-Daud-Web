@@ -18,10 +18,15 @@
         <p class="mb-4 text-sm font-bold text-forest">Tambah Jadwal Baru</p>
         <form action="{{ route('pengurus.jadwal.store') }}" method="POST" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             @csrf
-            <div>
+            <div class="sm:col-span-2 lg:col-span-3">
                 <label class="mb-1 block text-xs font-semibold text-stone-500">Nama Ibadah</label>
                 <input type="text" name="nama_sesi" value="{{ old('nama_sesi') }}" required placeholder="Ibadah Raya 1"
                        class="w-full rounded-xl bg-cream px-3 py-2.5 text-sm ring-1 ring-stone-200 outline-none">
+            </div>
+            <div class="sm:col-span-2 lg:col-span-3">
+                <label class="mb-1 block text-xs font-semibold text-stone-500">Deskripsi (Opsional)</label>
+                <textarea name="deskripsi" rows="2" placeholder="Deskripsi kegiatan..."
+                          class="w-full rounded-xl bg-cream px-3 py-2.5 text-sm ring-1 ring-stone-200 outline-none">{{ old('deskripsi') }}</textarea>
             </div>
             <div>
                 <label class="mb-1 block text-xs font-semibold text-stone-500">Tanggal</label>
@@ -85,10 +90,16 @@
                                 @endif
                             </td>
                             <td class="px-5 py-4">
-                                <form action="{{ route('pengurus.jadwal.destroy', $jadwal) }}" method="POST" onsubmit="return confirm('Hapus jadwal ini?')">
-                                    @csrf @method('DELETE')
-                                    <button class="rounded-lg bg-red-50 px-2.5 py-1.5 text-xs text-red-500 hover:bg-red-100"><i class="fa-solid fa-trash"></i></button>
-                                </form>
+                                <div class="flex gap-2">
+                                    <a href="{{ route('pengurus.absen.participants') }}?jadwal_id={{ $jadwal->id }}"
+                                       class="rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs text-blue-500 hover:bg-blue-100">
+                                        <i class="fa-solid fa-users"></i>
+                                    </a>
+                                    <form action="{{ route('pengurus.jadwal.destroy', $jadwal) }}" method="POST" onsubmit="return confirm('Hapus jadwal ini?')">
+                                        @csrf @method('DELETE')
+                                        <button class="rounded-lg bg-red-50 px-2.5 py-1.5 text-xs text-red-500 hover:bg-red-100"><i class="fa-solid fa-trash"></i></button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @endforeach

@@ -7,6 +7,7 @@ use App\Models\JadwalIbadah;
 use App\Models\Reservasi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ReservasiController extends Controller
 {
@@ -25,27 +26,37 @@ class ReservasiController extends Controller
     {
         $user = Auth::user();
 
-        if ($jadwal->status !== 'terpublikasi') {
-            return back()->with('error', 'Sesi ibadah ini tidak tersedia untuk reservasi.');
-        }
+        try {
+            DB::transaction(function () use ($user, $jadwal) {
+                $locked = JadwalIbadah::whereKey($jadwal->id)->lockForUpdate()->firstOrFail();
 
-        if ($jadwal->isPenuh()) {
-            return back()->with('error', 'Mohon maaf, kuota untuk sesi ibadah ini telah penuh.');
-        }
+                if ($locked->status !== 'terpublikasi') {
+                    throw new \RuntimeException('Sesi ibadah ini tidak tersedia untuk reservasi.');
+                }
 
-        $sudahReservasi = Reservasi::where('user_id', $user->id)
-            ->where('jadwal_ibadah_id', $jadwal->id)
-            ->exists();
+                if ($locked->isPenuh()) {
+                    throw new \RuntimeException('Mohon maaf, kuota untuk sesi ibadah ini telah penuh.');
+                }
 
-        if ($sudahReservasi) {
+                $sudahReservasi = Reservasi::where('user_id', $user->id)
+                    ->where('jadwal_ibadah_id', $locked->id)
+                    ->exists();
+
+                if ($sudahReservasi) {
+                    throw new \RuntimeException('Anda sudah terdaftar pada sesi ibadah ini.');
+                }
+
+                Reservasi::create([
+                    'user_id' => $user->id,
+                    'jadwal_ibadah_id' => $locked->id,
+                    'status' => 'confirmed',
+                ]);
+            });
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
             return back()->with('error', 'Anda sudah terdaftar pada sesi ibadah ini.');
         }
-
-        Reservasi::create([
-            'user_id' => $user->id,
-            'jadwal_ibadah_id' => $jadwal->id,
-            'status' => 'confirmed',
-        ]);
 
         return back()->with('success', 'Reservasi berhasil! Anda siap diverifikasi kamera pada hari-H.');
     }
