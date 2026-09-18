@@ -247,82 +247,82 @@ class BibleSeeder extends Seeder
 
     private function seedReadingPlans()
     {
-        // Plan 1 Tahun Baca Alkitab
+        // Plan 1 Tahun Baca Alkitab — ritme santai (~3 pasal/hari).
         $plan1Tahun = ReadingPlan::create([
             'nama' => '1 Tahun Baca Alkitab',
-            'deskripsi' => 'Baca seluruh Alkitab dalam 1 tahun dengan jadwal harian yang terstruktur.',
+            'deskripsi' => 'Baca seluruh Alkitab dalam 1 tahun dengan ritme santai sekitar 3 pasal per hari.',
             'durasi_hari' => 365,
             'aktif' => true,
         ]);
+        $this->generateReadingPlanItems($plan1Tahun, 3, 30);
 
-        // Sample items untuk 7 hari pertama
-        $this->createSampleReadingPlanItems($plan1Tahun);
-
-        // Plan 6 Bulan Baca Alkitab
+        // Plan 6 Bulan Baca Alkitab — ritme lebih padat (~6 pasal/hari) untuk
+        // mengejar target khatam dalam 6 bulan.
         $plan6Bulan = ReadingPlan::create([
             'nama' => '6 Bulan Baca Alkitab',
-            'deskripsi' => 'Baca seluruh Alkitab dalam 6 bulan dengan jadwal harian yang lebih intensif.',
+            'deskripsi' => 'Baca seluruh Alkitab dalam 6 bulan dengan ritme lebih intensif sekitar 6 pasal per hari.',
             'durasi_hari' => 180,
             'aktif' => true,
         ]);
+        $this->generateReadingPlanItems($plan6Bulan, 6, 30);
 
         $this->command->info('Reading Plans berhasil di-seed.');
     }
 
-    private function createSampleReadingPlanItems($plan)
+    /**
+     * Generate jadwal bacaan harian secara berurutan mengikuti urutan kitab.
+     *
+     * @param  \App\Models\ReadingPlan  $plan
+     * @param  int  $pasalPerHari  jumlah pasal yang dibaca tiap hari (menentukan kepadatan)
+     * @param  int  $jumlahHari    berapa hari pertama yang di-generate (contoh jadwal)
+     */
+    private function generateReadingPlanItems($plan, int $pasalPerHari, int $jumlahHari): void
     {
-        // Sample untuk 7 hari pertama
-        $bacaanHarian = [
-            [
-                'hari_ke' => 1,
-                'bacaan' => [
-                    ['kitab_id' => Kitab::where('singkatan', 'Kej')->first()->id, 'pasal_mulai' => 1, 'pasal_selesai' => 3],
-                ]
-            ],
-            [
-                'hari_ke' => 2,
-                'bacaan' => [
-                    ['kitab_id' => Kitab::where('singkatan', 'Kej')->first()->id, 'pasal_mulai' => 4, 'pasal_selesai' => 6],
-                ]
-            ],
-            [
-                'hari_ke' => 3,
-                'bacaan' => [
-                    ['kitab_id' => Kitab::where('singkatan', 'Kej')->first()->id, 'pasal_mulai' => 7, 'pasal_selesai' => 9],
-                ]
-            ],
-            [
-                'hari_ke' => 4,
-                'bacaan' => [
-                    ['kitab_id' => Kitab::where('singkatan', 'Kej')->first()->id, 'pasal_mulai' => 10, 'pasal_selesai' => 12],
-                ]
-            ],
-            [
-                'hari_ke' => 5,
-                'bacaan' => [
-                    ['kitab_id' => Kitab::where('singkatan', 'Kej')->first()->id, 'pasal_mulai' => 13, 'pasal_selesai' => 15],
-                ]
-            ],
-            [
-                'hari_ke' => 6,
-                'bacaan' => [
-                    ['kitab_id' => Kitab::where('singkatan', 'Kej')->first()->id, 'pasal_mulai' => 16, 'pasal_selesai' => 18],
-                ]
-            ],
-            [
-                'hari_ke' => 7,
-                'bacaan' => [
-                    ['kitab_id' => Kitab::where('singkatan', 'Kej')->first()->id, 'pasal_mulai' => 19, 'pasal_selesai' => 21],
-                    ['kitab_id' => Kitab::where('singkatan', 'Mazm')->first()->id, 'pasal_mulai' => 1, 'pasal_selesai' => 2],
-                ]
-            ],
-        ];
+        // Daftar kitab berurutan beserta jumlah pasalnya (dipakai untuk membagi bacaan).
+        $kitabs = Kitab::orderBy('urutan')->get(['id', 'jumlah_pasal']);
+        if ($kitabs->isEmpty()) {
+            return;
+        }
 
-        foreach ($bacaanHarian as $item) {
+        // "Pointer" posisi baca: index kitab & nomor pasal saat ini.
+        $kitabIndex = 0;
+        $pasalSaatIni = 1;
+
+        for ($hari = 1; $hari <= $jumlahHari; $hari++) {
+            $bacaan = [];
+            $sisaPasalHariIni = $pasalPerHari;
+
+            while ($sisaPasalHariIni > 0 && $kitabIndex < $kitabs->count()) {
+                $kitab = $kitabs[$kitabIndex];
+                $mulai = $pasalSaatIni;
+                $selesai = min($kitab->jumlah_pasal, $mulai + $sisaPasalHariIni - 1);
+
+                $bacaan[] = [
+                    'kitab_id' => $kitab->id,
+                    'pasal_mulai' => $mulai,
+                    'pasal_selesai' => $selesai,
+                ];
+
+                $terpakai = $selesai - $mulai + 1;
+                $sisaPasalHariIni -= $terpakai;
+
+                if ($selesai >= $kitab->jumlah_pasal) {
+                    // Lanjut ke kitab berikutnya
+                    $kitabIndex++;
+                    $pasalSaatIni = 1;
+                } else {
+                    $pasalSaatIni = $selesai + 1;
+                }
+            }
+
+            if (empty($bacaan)) {
+                break; // seluruh kitab sudah terbagi
+            }
+
             ReadingPlanItem::create([
                 'reading_plan_id' => $plan->id,
-                'hari_ke' => $item['hari_ke'],
-                'bacaan' => $item['bacaan'],
+                'hari_ke' => $hari,
+                'bacaan' => $bacaan,
             ]);
         }
     }

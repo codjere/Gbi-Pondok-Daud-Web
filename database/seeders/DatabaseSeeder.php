@@ -109,43 +109,10 @@ class DatabaseSeeder extends Seeder
 
         $jadwalModels = collect($jadwals)->map(fn ($j) => JadwalIbadah::create($j));
 
-        $ibadahPagi = $jadwalModels[0];
-        $ibadahSore = $jadwalModels[1];
-        $ibadahMalam = $jadwalModels[2];
-        $ibadahSelesai = $jadwalModels[4];
-
-        foreach ($jemaatUsers->take(5) as $user) {
-            Reservasi::create([
-                'user_id' => $user->id,
-                'jadwal_ibadah_id' => $ibadahPagi->id,
-                'status' => 'confirmed',
-            ]);
-        }
-
-        foreach ($jemaatUsers->take(7) as $user) {
-            Reservasi::create([
-                'user_id' => $user->id,
-                'jadwal_ibadah_id' => $ibadahSore->id,
-                'status' => 'confirmed',
-            ]);
-        }
-
-        foreach ($jemaatUsers as $user) {
-            Reservasi::create([
-                'user_id' => $user->id,
-                'jadwal_ibadah_id' => $ibadahMalam->id,
-                'status' => 'confirmed',
-            ]);
-        }
-
-        foreach ($jemaatUsers->take(5) as $i => $user) {
-            Kehadiran::create([
-                'user_id' => $user->id,
-                'jadwal_ibadah_id' => $ibadahSelesai->id,
-                'waktu_checkin' => $ibadahSelesai->tanggal->copy()->setTime(7, 52 + $i),
-                'metode_verifikasi' => 'facenet',
-            ]);
-        }
+        // CATATAN: Reservasi & kehadiran TIDAK di-seed sebagai data dummy.
+        // Keduanya harus terisi hanya melalui aksi nyata (reservasi jemaat &
+        // check-in/absen pada hari-H), supaya daftar kehadiran tidak "sudah
+        // terisi" secara otomatis.
 
         PermohonanDoa::create([
             'user_id' => $jemaatUsers[0]->id,

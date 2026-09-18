@@ -95,7 +95,8 @@
                 <i class="fa-solid fa-check mr-1"></i> Tandai Hari Ini Selesai
             </button>
         </div>
-    @else
+    @elseif($planSelesai)
+        {{-- Plan benar-benar selesai --}}
         <div class="mb-6 rounded-2xl bg-emerald-50 p-6 text-center ring-1 ring-emerald-200">
             <i class="fa-solid fa-trophy text-3xl text-emerald-600"></i>
             <h3 class="mt-3 text-lg font-bold text-emerald-800">Selamat! 🎉</h3>
@@ -103,6 +104,16 @@
             <p class="mt-2 text-xs text-emerald-600">
                 Selesai pada: {{ $progress->tanggal_selesai ? $progress->tanggal_selesai->format('d M Y') : 'Hari ini' }}
             </p>
+        </div>
+    @else
+        {{-- Plan belum selesai, tetapi jadwal bacaan hari ini belum tersedia --}}
+        <div class="mb-6 rounded-2xl bg-amber-50 p-6 text-center ring-1 ring-amber-200">
+            <i class="fa-solid fa-hourglass-half text-3xl text-amber-500"></i>
+            <h3 class="mt-3 text-lg font-bold text-amber-800">Bacaan Hari ke-{{ $progress->hari_terakhir + 1 }} Belum Tersedia</h3>
+            <p class="mt-1 text-sm text-amber-700">Jadwal bacaan untuk hari ini belum disiapkan pengurus. Rencana ini <strong>belum selesai</strong> — silakan cek kembali nanti atau lanjutkan membaca kitab secara mandiri.</p>
+            <a href="{{ route('jemaat.alkitab') }}" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-forest px-5 py-2.5 text-xs font-bold text-white hover:bg-forest-mid">
+                <i class="fa-solid fa-book-bible"></i> Baca Alkitab
+            </a>
         </div>
     @endif
 

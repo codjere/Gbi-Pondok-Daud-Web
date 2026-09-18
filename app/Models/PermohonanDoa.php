@@ -27,4 +27,14 @@ class PermohonanDoa extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function statusColor(): string
+    {
+        return match($this->status) {
+            'pending' => 'amber',
+            'diproses' => 'blue',
+            'selesai' => 'emerald',
+            default => 'stone',
+        };
+    }
 }

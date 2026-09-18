@@ -290,7 +290,7 @@ def generate_response(message: str, sources: list[dict]) -> str:
         if len(content) > 400:
             snippet += "..."
         return (
-            f"Berdasarkan informasi gereja ({best['title']}):\n\n"
+            f"Berdasarkan informasi gereja ({best['title']}):\n\n"  
             f"{snippet}\n\n"
             f"Apakah ada hal lain yang ingin Anda tanyakan? 🙏"
         )

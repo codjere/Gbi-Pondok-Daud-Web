@@ -99,14 +99,8 @@ class ExtraDemoSeeder extends Seeder
         );
 
         $allJemaat = User::where('role', 'jemaat')->get();
-        $ibadahPemuda = $jadwalModels[0];
 
-        foreach ($allJemaat->take(6) as $user) {
-            Reservasi::firstOrCreate([
-                'user_id' => $user->id,
-                'jadwal_ibadah_id' => $ibadahPemuda->id,
-            ], ['status' => 'confirmed']);
-        }
+        // Reservasi TIDAK di-seed sebagai dummy (lihat catatan di DatabaseSeeder).
 
         $doaSamples = [
             ['pokok_doa' => 'Doakan keluarga kami yang sedang menghadapi ujian ekonomi, agar Tuhan membuka jalan pekerjaan.', 'is_anonymous' => false, 'status' => 'pending'],
@@ -133,7 +127,7 @@ class ExtraDemoSeeder extends Seeder
             ],
             [
                 'kategori' => 'Berita Kegiatan',
-                'judul' => 'Bakti Sosial COOL se-Medan di Panti Asuhan',
+                'judul' => 'Bakti Sosial COOL se-Kendari di Panti Asuhan',
                 'isi' => "Seluruh COOL GBI Pondok Daud merencanakan bakti sosial bersama di panti asuhan. Kegiatan meliputi pembagian sembako, permainan anak, dan ibadah singkat.\n\nInformasi lebih lanjut akan diumumkan pemimpin COOL masing-masing.",
             ],
             [
@@ -158,7 +152,7 @@ class ExtraDemoSeeder extends Seeder
             [
                 'kategori' => 'jadwal',
                 'pertanyaan' => 'Di mana alamat GBI Pondok Daud?',
-                'jawaban' => 'GBI Pondok Daud melayani jemaat di Medan. Untuk alamat lengkap dan denah parkir, silakan hubungi sekretariat gereja atau cek pengumuman terbaru di menu Warta.',
+                'jawaban' => 'GBI Pondok Daud melayani jemaat di Kendari, Sulawesi Tenggara (pusat di wilayah Onembute). Untuk alamat lengkap dan denah parkir, silakan hubungi sekretariat gereja atau cek pengumuman terbaru di menu Warta.',
                 'keywords' => ['alamat', 'lokasi', 'gereja', 'dimana'],
             ],
             [
@@ -172,10 +166,10 @@ class ExtraDemoSeeder extends Seeder
         }
 
         foreach ([
-            ['email' => 'andi@email.com', 'usia' => 28, 'jenis_kelamin' => 'L', 'kecamatan' => 'Medan Kota', 'minat' => ['musik', 'doa'], 'bakat' => ['gitar', 'vokal'], 'hari' => ['sabtu', 'minggu'], 'waktu' => 'malam'],
-            ['email' => 'maria@email.com', 'usia' => 34, 'jenis_kelamin' => 'P', 'kecamatan' => 'Medan Area', 'minat' => ['melayani', 'sosial'], 'bakat' => ['organisasi', 'public_speaking'], 'hari' => ['minggu'], 'waktu' => 'pagi'],
-            ['email' => 'esther@email.com', 'usia' => 22, 'jenis_kelamin' => 'P', 'kecamatan' => 'Medan Sunggal', 'minat' => ['anak_muda', 'musik', 'kreatif'], 'bakat' => ['vokal', 'desain'], 'hari' => ['sabtu', 'minggu'], 'waktu' => 'sore'],
-            ['email' => 'timothy@email.com', 'usia' => 19, 'jenis_kelamin' => 'L', 'kecamatan' => 'Medan Timur', 'minat' => ['multimedia', 'teknologi'], 'bakat' => ['video', 'komputer'], 'hari' => ['sabtu', 'minggu'], 'waktu' => 'fleksibel'],
+            ['email' => 'andi@email.com', 'usia' => 28, 'jenis_kelamin' => 'L', 'kecamatan' => 'Onembute', 'minat' => ['musik', 'doa'], 'bakat' => ['gitar', 'vokal'], 'hari' => ['sabtu', 'minggu'], 'waktu' => 'malam'],
+            ['email' => 'maria@email.com', 'usia' => 34, 'jenis_kelamin' => 'P', 'kecamatan' => 'Ponggolaka', 'minat' => ['melayani', 'sosial'], 'bakat' => ['organisasi', 'public_speaking'], 'hari' => ['minggu'], 'waktu' => 'pagi'],
+            ['email' => 'esther@email.com', 'usia' => 22, 'jenis_kelamin' => 'P', 'kecamatan' => 'Anggoya', 'minat' => ['anak_muda', 'musik', 'kreatif'], 'bakat' => ['vokal', 'desain'], 'hari' => ['sabtu', 'minggu'], 'waktu' => 'sore'],
+            ['email' => 'timothy@email.com', 'usia' => 19, 'jenis_kelamin' => 'L', 'kecamatan' => 'Lepo-Lepo', 'minat' => ['multimedia', 'teknologi'], 'bakat' => ['video', 'komputer'], 'hari' => ['sabtu', 'minggu'], 'waktu' => 'fleksibel'],
         ] as $p) {
             $user = User::where('email', $p['email'])->first();
             if (! $user) {
@@ -188,7 +182,7 @@ class ExtraDemoSeeder extends Seeder
                     'usia' => $p['usia'],
                     'jenis_kelamin' => $p['jenis_kelamin'],
                     'kecamatan' => $p['kecamatan'],
-                    'alamat' => 'Medan',
+                    'alamat' => 'Kendari',
                     'minat' => $p['minat'],
                     'bakat' => $p['bakat'],
                     'ketersediaan_hari' => $p['hari'],
@@ -200,7 +194,7 @@ class ExtraDemoSeeder extends Seeder
 
         $worship = TimPelayanan::where('slug', 'praise-worship')->first();
         $multimedia = TimPelayanan::where('slug', 'multimedia')->first();
-        $coolSunggal = CoolGroup::where('kecamatan', 'Medan Sunggal')->first();
+        $coolSunggal = CoolGroup::where('kecamatan', 'Anggoya')->first();
 
         $andi = User::where('email', 'andi@email.com')->first();
         if ($andi && $worship) {
@@ -226,16 +220,8 @@ class ExtraDemoSeeder extends Seeder
             );
         }
 
-        $pastJadwal = JadwalIbadah::where('status', 'selesai')->orderByDesc('tanggal')->first();
-        if ($pastJadwal && $pelayan) {
-            Kehadiran::firstOrCreate(
-                ['user_id' => $pelayan->id, 'jadwal_ibadah_id' => $pastJadwal->id],
-                [
-                    'waktu_checkin' => $pastJadwal->tanggal->copy()->setTime(7, 40),
-                    'metode_verifikasi' => 'facenet',
-                ]
-            );
-        }
+        // Kehadiran TIDAK di-seed sebagai dummy. Daftar hadir hanya terisi
+        // lewat check-in/absen nyata pada hari-H.
     }
 
     private function mockEmbedding(): array

@@ -62,16 +62,46 @@
 
     {{-- Bible Content --}}
     <div class="rounded-2xl bg-white p-6 ring-1 ring-stone-200/80">
-        <div id="bibleContent" class="space-y-4">
-            @foreach ($ayats as $ayat)
-                <div class="flex gap-3 p-3 rounded-lg hover:bg-cream/50">
-                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold-soft text-xs font-bold text-forest">
-                        {{ $ayat->nomor_ayat }}
-                    </span>
-                    <p class="flex-1 text-sm text-stone-700 leading-relaxed">{{ $ayat->isi_ayat }}</p>
+        @if ($ayats->isEmpty())
+            {{-- Teks pasal belum tersedia di database --}}
+            <div class="py-10 text-center">
+                <i class="fa-solid fa-book-bible text-3xl text-stone-300"></i>
+                <h3 class="mt-3 text-base font-bold text-forest">Teks {{ $kitab->nama }} {{ $pasal->nomor_pasal }} Belum Tersedia</h3>
+                <p class="mx-auto mt-2 max-w-md text-sm text-stone-500">
+                    Isi ayat untuk pasal ini belum dimuat ke sistem. Silakan lanjut ke pasal lain yang sudah tersedia,
+                    atau hubungi pengurus untuk melengkapi teks Alkitab.
+                </p>
+                <div class="mt-5 flex flex-wrap justify-center gap-2">
+                    @if($pasalSebelumnya)
+                        <a href="{{ route('jemaat.alkitab.baca', ['kitabId' => $kitab->id, 'nomorPasal' => $pasalSebelumnya]) }}"
+                           class="rounded-xl bg-stone-100 px-4 py-2 text-sm font-bold text-stone-600 hover:bg-stone-200">
+                            <i class="fa-solid fa-chevron-left mr-1"></i> Pasal {{ $pasalSebelumnya }}
+                        </a>
+                    @endif
+                    @if($pasalBerikutnya)
+                        <a href="{{ route('jemaat.alkitab.baca', ['kitabId' => $kitab->id, 'nomorPasal' => $pasalBerikutnya]) }}"
+                           class="rounded-xl bg-forest px-4 py-2 text-sm font-bold text-white hover:bg-forest-mid">
+                            Pasal {{ $pasalBerikutnya }} <i class="fa-solid fa-chevron-right ml-1"></i>
+                        </a>
+                    @endif
+                    <a href="{{ route('jemaat.alkitab') }}"
+                       class="rounded-xl bg-gold-soft px-4 py-2 text-sm font-bold text-forest hover:bg-gold/30">
+                        <i class="fa-solid fa-list mr-1"></i> Daftar Kitab
+                    </a>
                 </div>
-            @endforeach
-        </div>
+            </div>
+        @else
+            <div id="bibleContent" class="space-y-4">
+                @foreach ($ayats as $ayat)
+                    <div class="flex gap-3 p-3 rounded-lg hover:bg-cream/50">
+                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold-soft text-xs font-bold text-forest">
+                            {{ $ayat->nomor_ayat }}
+                        </span>
+                        <p class="flex-1 text-sm text-stone-700 leading-relaxed">{{ $ayat->isi_ayat }}</p>
+                    </div>
+                @endforeach
+            </div>
+        @endif
     </div>
 
     {{-- Mark as Complete Button --}}

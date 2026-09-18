@@ -17,7 +17,7 @@ use App\Http\Controllers\Pengurus\LaporanController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => view('landing'))->name('landing');
-Route::get('/tentang-kami', fn () => view('about'))->name('about');
+Route::get('/tentang-kami', fn () => redirect()->to(route('landing').'#tentang-kami'))->name('about');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -41,6 +41,8 @@ Route::middleware(['auth', 'verified.otp'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::prefix('jemaat')->name('jemaat.')->group(function () {
+        Route::get('/profil', [\App\Http\Controllers\Jemaat\ProfileController::class, 'edit'])->name('profil');
+        Route::put('/profil', [\App\Http\Controllers\Jemaat\ProfileController::class, 'update'])->name('profil.update');
         Route::get('/jadwal', [JemaatJadwalController::class, 'index'])->name('jadwal');
         Route::get('/reservasi', [ReservasiController::class, 'index'])->name('reservasi');
         Route::post('/reservasi/{jadwal}', [ReservasiController::class, 'store'])->name('reservasi.store');
@@ -80,5 +82,8 @@ Route::middleware(['auth', 'verified.otp'])->group(function () {
         Route::post('/absen/manual', [AbsenController::class, 'manual'])->name('absen.manual');
         Route::get('/absen/participants', [AbsenController::class, 'participants'])->name('absen.participants');
         Route::get('/absen/list', [AbsenController::class, 'todayList'])->name('absen.list')->middleware('session.expiration');
+        Route::get('/permohonan-doa', [\App\Http\Controllers\Pengurus\PermohonanDoaController::class, 'index'])->name('permohonan-doa');
+        Route::put('/permohonan-doa/{permohonanDoa}', [\App\Http\Controllers\Pengurus\PermohonanDoaController::class, 'updateStatus'])->name('permohonan-doa.update');
+        Route::delete('/permohonan-doa/{permohonanDoa}', [\App\Http\Controllers\Pengurus\PermohonanDoaController::class, 'destroy'])->name('permohonan-doa.destroy');
     });
 });

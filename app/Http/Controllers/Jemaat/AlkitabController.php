@@ -44,13 +44,27 @@ class AlkitabController extends Controller
         // Cari kitab berdasarkan ID
         $kitab = Kitab::findOrFail($kitabId);
 
-        // Cari pasal berdasarkan kitab dan nomor pasal
-        $pasal = Pasal::where('kitab_id', $kitabId)
-            ->where('nomor_pasal', $nomorPasal)
-            ->firstOrFail();
+        $nomorPasal = (int) $nomorPasal;
+
+        // Validasi nomor pasal masih dalam rentang kitab.
+        if ($nomorPasal < 1 || $nomorPasal > $kitab->jumlah_pasal) {
+            abort(404, 'Pasal tidak ditemukan.');
+        }
+
+        // Cari pasal. Jika record-nya belum ada di database (data Alkitab belum
+        // lengkap), buat record pasal secara on-the-fly supaya halaman tetap
+        // tampil (tidak kosong / 404) — ayatnya bisa kosong dan ditangani view.
+        $pasal = Pasal::firstOrCreate(
+            ['kitab_id' => $kitab->id, 'nomor_pasal' => $nomorPasal],
+            ['jumlah_ayat' => 0]
+        );
 
         // Ambil semua ayat dalam pasal ini, diurutkan berdasarkan nomor
         $ayats = $pasal->ayat;
+
+        // Navigasi pasal sebelumnya / berikutnya dalam kitab yang sama
+        $pasalSebelumnya = $nomorPasal > 1 ? $nomorPasal - 1 : null;
+        $pasalBerikutnya = $nomorPasal < $kitab->jumlah_pasal ? $nomorPasal + 1 : null;
 
         // Track jika user login - catat history bacaan
         if (Auth::check()) {
@@ -62,7 +76,7 @@ class AlkitabController extends Controller
             ]);
         }
 
-        return view('jemaat.alkitab-baca', compact('kitab', 'pasal', 'ayats'));
+        return view('jemaat.alkitab-baca', compact('kitab', 'pasal', 'ayats', 'pasalSebelumnya', 'pasalBerikutnya'));
     }
 
     /**
@@ -131,7 +145,10 @@ class AlkitabController extends Controller
             ->first();
 
         if ($existingProgress) {
-            return back()->with('info', 'Anda sudah mulai reading plan ini.');
+            // Sudah pernah mulai -> langsung arahkan ke halaman detail plannya
+            // (bukan sekadar kembali) supaya tombol terasa responsif.
+            return redirect()->route('jemaat.alkitab.plan', $plan->id)
+                ->with('info', 'Anda sudah memulai reading plan ini. Lanjutkan bacaan Anda.');
         }
 
         // Buat progress baru
@@ -179,13 +196,22 @@ class AlkitabController extends Controller
             ->where('hari_ke', $hariBerikutnya)
             ->first();
 
-        // Jika sudah selesai semua hari
-        if (!$bacaanHariIni && $hariBerikutnya > $plan->durasi_hari) {
-            $bacaanHariIni = null;
+        // Apakah plan BENAR-BENAR sudah selesai? Hanya bila ditandai selesai
+        // ATAU hari yang sudah dibaca sudah mencapai/melewati durasi plan.
+        // (Jangan menganggap "selesai" hanya karena item bacaan hari itu belum ada.)
+        $planSelesai = $progress->selesai || $progress->hari_terakhir >= $plan->durasi_hari;
+
+        // Apakah bacaan untuk hari ini belum tersedia di database (plan belum
+        // dilengkapi jadwal harian), padahal plan belum selesai.
+        $bacaanBelumTersedia = ! $planSelesai && ! $bacaanHariIni;
+
+        if ($planSelesai) {
             $hariBerikutnya = null;
         }
 
-        return view('jemaat.alkitab-plan-detail', compact('plan', 'progress', 'bacaanHariIni', 'hariBerikutnya'));
+        return view('jemaat.alkitab-plan-detail', compact(
+            'plan', 'progress', 'bacaanHariIni', 'hariBerikutnya', 'planSelesai', 'bacaanBelumTersedia'
+        ));
     }
 
     /**

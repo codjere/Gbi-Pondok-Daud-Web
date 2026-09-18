@@ -17,7 +17,7 @@ class HandleSessionExpiration
     {
         // Check if this is an AJAX request and session is expired
         if ($request->ajax() || $request->wantsJson()) {
-            if (! $request->session()->has('_token')) {
+            if (! $request->session()->has('_token') && ! $request->session()->has('user_id')) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Sesi Anda telah berakhir. Silakan login kembali.',

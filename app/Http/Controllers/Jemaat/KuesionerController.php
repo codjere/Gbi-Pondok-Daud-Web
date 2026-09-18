@@ -100,10 +100,12 @@ class KuesionerController extends Controller
 
     private function kecamatanOptions(): array
     {
+        // Wilayah/KUL GBI Pondok Daud di Kendari, Sulawesi Tenggara.
+        // Empat KUL utama didahulukan agar cocok dengan rekomendasi COOL.
         return [
-            'Medan Kota', 'Medan Area', 'Medan Barat', 'Medan Timur',
-            'Medan Denai', 'Medan Sunggal', 'Medan Helvetia', 'Medan Polonia',
-            'Medan Maimun', 'Medan Petisah', 'Medan Amplas', 'Medan Johor',
+            'Onembute', 'Ponggolaka', 'Anggoya', 'Lepo-Lepo',
+            'Kambu', 'Poasia', 'Kadia', 'Wua-Wua',
+            'Mandonga', 'Baruga', 'Puuwatu', 'Kendari Barat',
         ];
     }
 }

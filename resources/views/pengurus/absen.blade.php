@@ -12,33 +12,33 @@
 @endpush
 
 @section('content')
-<div class="mx-auto max-w-6xl">
+<div class="mx-auto max-w-6xl pattern-dots">
     @include('partials.flash')
 
     <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-            <h2 class="text-xl font-extrabold text-forest">Absensi Pelayan — Face Recognition</h2>
-            <p class="mt-1 text-sm text-stone-500">Verifikasi kehadiran pelayan/jemaat menggunakan FaceNet + Cosine Similarity</p>
+            <h2 class="text-xl font-extrabold text-forest dark:text-cyan-400">Absensi Pelayan — Face Recognition</h2>
+            <p class="mt-1 text-sm text-stone-600 dark:text-slate-400">Verifikasi kehadiran pelayan/jemaat menggunakan FaceNet + Cosine Similarity</p>
         </div>
         <div class="flex items-center gap-2">
             @if ($serviceOnline)
-                <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-50 to-green-50 px-3 py-1.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 dark:from-slate-600 dark:to-slate-500 dark:text-emerald-400">
                     <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span> FaceNet Aktif
                 </span>
             @else
-                <span class="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 ring-1 ring-red-200">
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-red-50 to-orange-50 px-3 py-1.5 text-xs font-bold text-red-700 ring-1 ring-red-200 dark:from-slate-600 dark:to-slate-500 dark:text-red-400">
                     <span class="h-2 w-2 rounded-full bg-red-500"></span> Service Offline
                 </span>
             @endif
-            <span class="rounded-full bg-gold-soft px-3 py-1.5 text-xs font-bold text-forest">{{ $registeredCount }} wajah terdaftar</span>
+            <span class="rounded-full bg-gradient-to-r from-gold-soft to-amber-100 px-3 py-1.5 text-xs font-bold text-forest dark:from-slate-600 dark:to-slate-500 dark:text-cyan-400">{{ $registeredCount }} wajah terdaftar</span>
         </div>
     </div>
 
     @if (!$serviceOnline)
-        <div class="rounded-2xl bg-amber-50 p-8 text-center ring-1 ring-amber-200">
-            <i class="fa-solid fa-server text-3xl text-amber-600"></i>
-            <p class="mt-3 text-sm font-semibold text-amber-800">Layanan FaceNet belum berjalan</p>
-            <p class="mt-1 text-xs text-amber-700">Buka terminal dan jalankan: <code class="rounded bg-amber-100 px-2 py-0.5">face-service\start.bat</code></p>
+        <div class="rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 p-8 text-center shadow-md ring-1 ring-amber-200 dark:from-slate-600 dark:to-slate-700">
+            <i class="fa-solid fa-server text-3xl text-amber-600 dark:text-amber-400"></i>
+            <p class="mt-3 text-sm font-semibold text-amber-800 dark:text-amber-300">Layanan FaceNet belum berjalan</p>
+            <p class="mt-1 text-xs text-amber-700 dark:text-amber-400">Buka terminal dan jalankan: <code class="rounded bg-gradient-to-r from-amber-100 to-orange-100 px-2 py-0.5 dark:from-slate-500 dark:to-slate-600">face-service\start.bat</code></p>
         </div>
     @else
         <div class="grid gap-6 lg:grid-cols-5">

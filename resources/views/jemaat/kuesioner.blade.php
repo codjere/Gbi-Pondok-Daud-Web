@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Kuesioner Profil')
-@section('breadcrumb', 'Jemaat / Kuesioner AI')
+@section('title', 'Rekomendasi AI')
+@section('breadcrumb', 'Jemaat / Rekomendasi AI')
 
 @section('content')
 <div class="mx-auto max-w-3xl">
