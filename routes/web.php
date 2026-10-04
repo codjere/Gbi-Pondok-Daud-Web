@@ -24,15 +24,25 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
+
+    // Face Login (langkah: scan wajah -> OTP email -> masuk)
+    Route::post('/login/face', [AuthController::class, 'faceLogin'])->name('face.login')->middleware('throttle:10,1');
+    Route::get('/login/face/otp', [AuthController::class, 'showFaceOtp'])->name('face.otp');
+    Route::post('/login/face/otp', [AuthController::class, 'verifyFaceOtp'])->name('face.otp.verify')->middleware('throttle:10,1');
+    Route::post('/login/face/otp/resend', [AuthController::class, 'resendFaceOtp'])->name('face.otp.resend')->middleware('throttle:3,1');
 });
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
-    Route::get('/register/otp', [AuthController::class, 'showOtp'])->name('otp.show');
-    Route::post('/register/otp', [AuthController::class, 'verifyOtp'])->name('otp.verify')->middleware('throttle:10,1');
-    Route::post('/register/otp/resend', [AuthController::class, 'resendOtp'])->name('otp.resend')->middleware('throttle:3,1');
 });
+
+// OTP: dipakai untuk (a) verifikasi email saat registrasi (user sudah auth,
+// belum verified) DAN (b) 2FA saat login password (belum auth, ada pending
+// session). Akses dikontrol di dalam controller, jadi tidak pakai middleware
+// auth/guest di sini.
+Route::get('/register/otp', [AuthController::class, 'showOtp'])->name('otp.show');
+Route::post('/register/otp', [AuthController::class, 'verifyOtp'])->name('otp.verify')->middleware('throttle:10,1');
+Route::post('/register/otp/resend', [AuthController::class, 'resendOtp'])->name('otp.resend')->middleware('throttle:3,1');
 
 Route::middleware(['auth', 'verified.otp'])->group(function () {
     Route::get('/register/biometric', [AuthController::class, 'showBiometric'])->name('register.biometric');

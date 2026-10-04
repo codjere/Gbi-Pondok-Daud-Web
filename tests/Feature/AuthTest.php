@@ -87,7 +87,7 @@ class AuthTest extends TestCase
 
     // ---------- Login ----------
 
-    public function test_login_with_valid_credentials_verified_and_biometric_goes_to_dashboard(): void
+    public function test_login_valid_password_sends_otp_and_does_not_login_yet(): void
     {
         $user = User::factory()->create([
             'email' => 'login@example.com',
@@ -98,14 +98,45 @@ class AuthTest extends TestCase
         $this->post('/login', [
             'email' => 'login@example.com',
             'password' => 'password123',
-        ])->assertRedirect(route('dashboard'));
+        ])->assertRedirect(route('otp.show'));
 
-        $this->assertAuthenticatedAs($user);
+        // Belum login penuh sebelum OTP; user disimpan sebagai pending + OTP terkirim.
+        $this->assertGuest();
+        $this->assertEquals($user->id, session('pending_login_user_id'));
+        $this->assertDatabaseHas('email_otps', ['user_id' => $user->id, 'consumed_at' => null]);
     }
 
-    public function test_login_verified_but_no_biometric_goes_to_biometric(): void
+    public function test_full_password_login_flow_with_otp_reaches_dashboard(): void
     {
-        User::factory()->create([
+        $user = User::factory()->create([
+            'email' => 'flow@example.com',
+            'password' => Hash::make('password123'),
+            'has_biometric' => true,
+        ]);
+
+        $this->post('/login', [
+            'email' => 'flow@example.com',
+            'password' => 'password123',
+        ])->assertRedirect(route('otp.show'));
+
+        EmailOtp::where('user_id', $user->id)->update(['consumed_at' => now()]);
+        EmailOtp::create([
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'code_hash' => Hash::make('222333'),
+            'expires_at' => now()->addMinutes(10),
+        ]);
+
+        $this->post('/register/otp', ['code' => '222333'])
+            ->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertNull(session('pending_login_user_id'));
+    }
+
+    public function test_login_no_biometric_after_otp_goes_to_biometric(): void
+    {
+        $user = User::factory()->create([
             'email' => 'nobio@example.com',
             'password' => Hash::make('password123'),
             'has_biometric' => false,
@@ -114,20 +145,20 @@ class AuthTest extends TestCase
         $this->post('/login', [
             'email' => 'nobio@example.com',
             'password' => 'password123',
-        ])->assertRedirect(route('register.biometric'));
-    }
+        ])->assertRedirect(route('otp.show'));
 
-    public function test_login_unverified_email_goes_to_otp(): void
-    {
-        User::factory()->unverified()->create([
-            'email' => 'unverified@example.com',
-            'password' => Hash::make('password123'),
+        EmailOtp::where('user_id', $user->id)->update(['consumed_at' => now()]);
+        EmailOtp::create([
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'code_hash' => Hash::make('444555'),
+            'expires_at' => now()->addMinutes(10),
         ]);
 
-        $this->post('/login', [
-            'email' => 'unverified@example.com',
-            'password' => 'password123',
-        ])->assertRedirect(route('otp.show'));
+        $this->post('/register/otp', ['code' => '444555'])
+            ->assertRedirect(route('register.biometric'));
+
+        $this->assertAuthenticatedAs($user);
     }
 
     public function test_login_with_wrong_password_fails(): void
