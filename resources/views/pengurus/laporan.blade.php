@@ -44,16 +44,52 @@
             </div>
         </div>
 
+        {{-- Grafik tren + breakdown metode verifikasi --}}
+        <div class="mb-6 grid gap-4 lg:grid-cols-3">
+            {{-- Tren kehadiran --}}
+            <div class="rounded-2xl bg-white p-5 shadow-md ring-1 ring-cyan-200/60 dark:bg-slate-700 dark:ring-slate-600 lg:col-span-2">
+                <p class="mb-3 text-sm font-bold text-forest dark:text-cyan-400"><i class="fa-solid fa-chart-line mr-2 text-gold"></i>Tren Kehadiran (10 Sesi Terakhir)</p>
+                <div class="h-56">
+                    <canvas id="trenChart"></canvas>
+                </div>
+            </div>
+
+            {{-- Breakdown metode verifikasi --}}
+            <div class="rounded-2xl bg-white p-5 shadow-md ring-1 ring-cyan-200/60 dark:bg-slate-700 dark:ring-slate-600">
+                <p class="mb-3 text-sm font-bold text-forest dark:text-cyan-400"><i class="fa-solid fa-shield-halved mr-2 text-gold"></i>Metode Verifikasi</p>
+                <div class="mx-auto h-40 w-40">
+                    <canvas id="metodeChart"></canvas>
+                </div>
+                <div class="mt-4 space-y-2 text-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="flex items-center gap-2 text-stone-600 dark:text-slate-300"><span class="inline-block h-3 w-3 rounded-full bg-emerald-500"></span>Pengenalan Wajah</span>
+                        <span class="font-bold text-forest dark:text-cyan-400">{{ $metode['facenet'] }} <span class="text-xs text-stone-400">({{ $metode['facenet_pct'] }}%)</span></span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="flex items-center gap-2 text-stone-600 dark:text-slate-300"><span class="inline-block h-3 w-3 rounded-full bg-amber-400"></span>Manual</span>
+                        <span class="font-bold text-forest dark:text-cyan-400">{{ $metode['manual'] }} <span class="text-xs text-stone-400">({{ $metode['manual_pct'] }}%)</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-cyan-200/60 dark:bg-slate-700 dark:ring-slate-600">
             <div class="flex items-center justify-between border-b border-cyan-200/50 px-5 py-4 dark:border-slate-600">
                 <p class="text-sm font-bold text-forest dark:text-cyan-400">Daftar Hadir — {{ $jadwal->nama_sesi }}</p>
                 @if ($kehadiran->isNotEmpty())
-                    <button class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-gold to-amber-500 px-4 py-2 text-xs font-bold text-forest shadow-md hover:shadow-lg transition hover:from-amber-400 hover:to-orange-400">
-                        <i class="fa-solid fa-download"></i> Unduh Laporan PDF
-                    </button>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{{ route('pengurus.laporan.pdf', ['jadwal_id' => $jadwal->id]) }}"
+                           class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-red-500 px-4 py-2 text-xs font-bold text-white shadow-md hover:shadow-lg transition hover:from-rose-400 hover:to-red-400">
+                            <i class="fa-solid fa-file-pdf"></i> PDF
+                        </a>
+                        <a href="{{ route('pengurus.laporan.excel', ['jadwal_id' => $jadwal->id]) }}"
+                           class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:shadow-lg transition hover:from-emerald-500 hover:to-green-500">
+                            <i class="fa-solid fa-file-excel"></i> Excel
+                        </a>
+                    </div>
                 @else
                     <button disabled class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-stone-100 to-slate-100 px-4 py-2 text-xs font-bold text-stone-400 cursor-not-allowed dark:from-slate-600 dark:to-slate-500">
-                        Unduh Laporan PDF
+                        <i class="fa-solid fa-download"></i> Belum ada data
                     </button>
                 @endif
             </div>
@@ -83,7 +119,13 @@
                                     <td class="px-5 py-3.5"><span class="rounded-full bg-gradient-to-r from-gold-soft to-amber-100 px-2 py-0.5 text-[10px] font-bold capitalize text-forest dark:from-slate-600 dark:to-slate-500 dark:text-amber-400">{{ $h->user->role }}</span></td>
                                     <td class="px-5 py-3.5 text-stone-600 dark:text-slate-400">{{ $h->user->email }}</td>
                                     <td class="px-5 py-3.5 text-stone-600 dark:text-slate-400">{{ $h->waktu_checkin->format('H:i') }} WIB</td>
-                                    <td class="px-5 py-3.5"><span class="rounded-full bg-gradient-to-r from-emerald-50 to-green-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:from-slate-600 dark:to-slate-500 dark:text-emerald-400">{{ $h->metode_verifikasi }}</span></td>
+                                    <td class="px-5 py-3.5">
+                                        @if ($h->metode_verifikasi === 'facenet')
+                                            <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"><i class="fa-solid fa-face-smile mr-1"></i>Wajah</span>
+                                        @else
+                                            <span class="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"><i class="fa-solid fa-pen mr-1"></i>Manual</span>
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -94,3 +136,68 @@
     @endif
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+    const isDark = document.documentElement.classList.contains('dark');
+    const gridColor = isDark ? 'rgba(148,163,184,0.15)' : 'rgba(0,0,0,0.06)';
+    const tickColor = isDark ? '#cbd5e1' : '#475569';
+
+    // ===== Tren kehadiran (line) =====
+    const trenEl = document.getElementById('trenChart');
+    if (trenEl) {
+        new Chart(trenEl, {
+            type: 'line',
+            data: {
+                labels: @json($tren['labels']),
+                datasets: [{
+                    label: 'Jumlah Hadir',
+                    data: @json($tren['data']),
+                    borderColor: '#0e9488',
+                    backgroundColor: 'rgba(14,148,136,0.15)',
+                    fill: true,
+                    tension: 0.35,
+                    pointBackgroundColor: '#0e9488',
+                    pointRadius: 4,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { color: tickColor, precision: 0 }, grid: { color: gridColor } },
+                    x: { ticks: { color: tickColor }, grid: { display: false } },
+                },
+            },
+        });
+    }
+
+    // ===== Metode verifikasi (doughnut) =====
+    const metodeEl = document.getElementById('metodeChart');
+    if (metodeEl) {
+        const face = {{ $metode['facenet'] }};
+        const manual = {{ $metode['manual'] }};
+        new Chart(metodeEl, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pengenalan Wajah', 'Manual'],
+                datasets: [{
+                    data: (face + manual) === 0 ? [1, 0] : [face, manual],
+                    backgroundColor: ['#10b981', '#fbbf24'],
+                    borderWidth: 0,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: { legend: { display: false } },
+            },
+        });
+    }
+})();
+</script>
+@endpush

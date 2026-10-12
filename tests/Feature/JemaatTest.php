@@ -15,7 +15,9 @@ use App\Models\TimPelayanan;
 use App\Models\User;
 use Database\Seeders\AiSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class JemaatTest extends TestCase
@@ -344,5 +346,77 @@ class JemaatTest extends TestCase
             ->assertRedirect(route('jemaat.alkitab.plan', $plan->id));
 
         $this->assertDatabaseHas('user_reading_progress', ['user_id' => $user->id, 'reading_plan_id' => $plan->id]);
+    }
+
+    // ---------- Profil ----------
+
+    public function test_profil_page_loads(): void
+    {
+        $this->actingAs($this->jemaat())->get(route('jemaat.profil'))->assertOk();
+    }
+
+    public function test_profil_update_name(): void
+    {
+        $user = $this->jemaat();
+        $this->actingAs($user)->put(route('jemaat.profil.update'), [
+            'name' => 'Nama Baru',
+            'email' => $user->email,
+        ])->assertRedirect(route('jemaat.profil'))->assertSessionHas('success');
+
+        $this->assertDatabaseHas('users', ['id' => $user->id, 'name' => 'Nama Baru']);
+    }
+
+    public function test_profil_upload_avatar(): void
+    {
+        Storage::fake('public');
+        $user = $this->jemaat();
+
+        $this->actingAs($user)->put(route('jemaat.profil.update'), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'avatar' => UploadedFile::fake()->image('foto.jpg', 200, 200),
+        ])->assertRedirect(route('jemaat.profil'))->assertSessionHas('success');
+
+        $user->refresh();
+        $this->assertNotNull($user->avatar);
+        $this->assertStringStartsWith('avatars/', $user->avatar);
+        Storage::disk('public')->assertExists($user->avatar);
+    }
+
+    public function test_profil_upload_rejects_non_image(): void
+    {
+        Storage::fake('public');
+        $user = $this->jemaat();
+
+        $this->actingAs($user)->put(route('jemaat.profil.update'), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'avatar' => UploadedFile::fake()->create('dokumen.pdf', 100, 'application/pdf'),
+        ])->assertSessionHasErrors('avatar');
+
+        $this->assertNull($user->fresh()->avatar);
+    }
+
+    public function test_profil_delete_avatar(): void
+    {
+        Storage::fake('public');
+        $user = $this->jemaat();
+
+        // Upload dulu
+        $this->actingAs($user)->put(route('jemaat.profil.update'), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'avatar' => UploadedFile::fake()->image('foto.jpg'),
+        ]);
+        $user->refresh();
+        $path = $user->avatar;
+        $this->assertNotNull($path);
+
+        // Hapus
+        $this->actingAs($user)->delete(route('jemaat.profil.avatar.delete'))
+            ->assertRedirect(route('jemaat.profil'))->assertSessionHas('success');
+
+        $this->assertNull($user->fresh()->avatar);
+        Storage::disk('public')->assertMissing($path);
     }
 }

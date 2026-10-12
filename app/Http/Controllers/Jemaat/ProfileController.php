@@ -7,6 +7,7 @@ use App\Models\UserProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
@@ -34,6 +35,7 @@ class ProfileController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'], // maks 2 MB
             'usia' => ['nullable', 'integer', 'min:10', 'max:100'],
             'jenis_kelamin' => ['nullable', 'in:L,P'],
             'kecamatan' => ['nullable', 'in:'.implode(',', $this->kecamatanOptions())],
@@ -46,6 +48,10 @@ class ProfileController extends Controller
             'ketersediaan_hari.*' => ['in:'.implode(',', array_keys($this->hariOptions()))],
             'ketersediaan_waktu' => ['nullable', 'in:pagi,siang,sore,malam,fleksibel'],
             'password' => ['nullable', 'confirmed', Password::min(8)],
+        ], [
+            'avatar.image' => 'Foto profil harus berupa gambar.',
+            'avatar.mimes' => 'Format foto harus JPG, PNG, atau WEBP.',
+            'avatar.max' => 'Ukuran foto maksimal 2 MB.',
         ]);
 
         // Update akun (nama & email; password opsional)
@@ -54,6 +60,15 @@ class ProfileController extends Controller
         if (! empty($data['password'])) {
             $user->password = Hash::make($data['password']);
         }
+
+        // Foto profil: simpan baru + hapus lama bila ada upload
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            $user->avatar = $request->file('avatar')->store('avatars', 'public');
+        }
+
         $user->save();
 
         // Update / buat profil. Pertahankan status completed_at bila sudah ada.
@@ -76,6 +91,23 @@ class ProfileController extends Controller
 
         return redirect()->route('jemaat.profil')
             ->with('success', 'Profil berhasil diperbarui.');
+    }
+
+    /**
+     * Hapus foto profil.
+     */
+    public function deleteAvatar()
+    {
+        $user = Auth::user();
+
+        if ($user->avatar) {
+            Storage::disk('public')->delete($user->avatar);
+            $user->avatar = null;
+            $user->save();
+        }
+
+        return redirect()->route('jemaat.profil')
+            ->with('success', 'Foto profil dihapus.');
     }
 
     private function minatOptions(): array

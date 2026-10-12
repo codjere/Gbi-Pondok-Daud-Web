@@ -41,7 +41,11 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL'), '/').'/storage',
+            // URL relatif (/storage) sebagai default agar bekerja baik via
+            // `php artisan serve` (root = folder public) maupun saat di-tunnel.
+            // Override lewat STORAGE_URL bila diakses dengan subpath (mis. Apache
+            // XAMPP: http://localhost/gereja-thesis/public/storage).
+            'url' => env('STORAGE_URL', '/storage'),
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

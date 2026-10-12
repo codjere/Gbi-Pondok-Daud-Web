@@ -13,7 +13,7 @@
     </div>
 
     <div class="mb-6 rounded-2xl bg-white p-6 shadow-md ring-1 ring-cyan-200/60 dark:bg-slate-700 dark:ring-slate-600">
-        <form action="{{ route('pengurus.konten.store') }}" method="POST" class="space-y-4">
+        <form action="{{ route('pengurus.konten.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
             @csrf
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
@@ -33,6 +33,21 @@
                 <label class="mb-1 block text-xs font-semibold text-stone-600 dark:text-slate-400">Isi Materi</label>
                 <textarea name="isi" rows="5" required minlength="20" class="w-full resize-none rounded-xl bg-gradient-to-r from-cyan-50 to-sky-50 px-3 py-2.5 text-sm shadow-sm ring-1 ring-cyan-200/60 outline-none focus:ring-2 focus:ring-cyan-500/40 dark:from-slate-600 dark:to-slate-500 dark:text-white dark:ring-slate-500">{{ old('isi') }}</textarea>
             </div>
+
+            <div>
+                <label class="mb-1 block text-xs font-semibold text-stone-600 dark:text-slate-400">Gambar (opsional)</label>
+                <div class="flex flex-wrap items-center gap-4">
+                    <label class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-50 to-sky-50 px-4 py-2.5 text-sm font-semibold text-forest shadow-sm ring-1 ring-cyan-200/60 transition hover:from-cyan-100 hover:to-sky-100 dark:from-slate-600 dark:to-slate-500 dark:text-white dark:ring-slate-500">
+                        <i class="fa-solid fa-image"></i>
+                        <span>Pilih Gambar</span>
+                        <input type="file" name="gambar" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="previewGambar(event)">
+                    </label>
+                    <img id="gambarPreview" src="" alt="Pratinjau gambar" class="hidden h-20 w-32 rounded-lg object-cover ring-1 ring-cyan-200/60 dark:ring-slate-500">
+                    <p class="text-xs text-stone-500 dark:text-slate-400">JPG, PNG, atau WEBP. Maks 4 MB.</p>
+                </div>
+                @error('gambar')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
+            </div>
+
             <button type="submit" class="rounded-xl bg-gradient-to-r from-gold to-amber-500 px-6 py-2.5 text-sm font-bold text-forest shadow-md hover:shadow-lg transition hover:from-amber-400 hover:to-orange-400">
                 <i class="fa-solid fa-upload mr-1"></i> Publikasikan
             </button>
@@ -43,6 +58,7 @@
         <table class="w-full text-left text-sm">
             <thead class="border-b border-cyan-200/50 bg-gradient-to-r from-cyan-50 to-sky-50 dark:border-slate-600 dark:from-slate-600 dark:to-slate-500">
                 <tr>
+                    <th class="px-5 py-3.5 text-xs font-bold uppercase text-stone-600 dark:text-slate-400">Gambar</th>
                     <th class="px-5 py-3.5 text-xs font-bold uppercase text-stone-600 dark:text-slate-400">Judul</th>
                     <th class="px-5 py-3.5 text-xs font-bold uppercase text-stone-600 dark:text-slate-400">Kategori</th>
                     <th class="px-5 py-3.5 text-xs font-bold uppercase text-stone-600 dark:text-slate-400">Penulis</th>
@@ -53,6 +69,13 @@
             <tbody class="divide-y divide-cyan-200/50 dark:divide-slate-600">
                 @foreach ($kontens as $konten)
                     <tr class="hover:bg-gradient-to-r hover:from-cyan-50 hover:to-sky-50 dark:hover:from-slate-600 dark:hover:to-slate-700">
+                        <td class="px-5 py-4">
+                            @if ($konten->gambarUrl())
+                                <img src="{{ $konten->gambarUrl() }}" alt="{{ $konten->judul }}" class="h-10 w-16 rounded-md object-cover ring-1 ring-cyan-200/60 dark:ring-slate-500">
+                            @else
+                                <div class="flex h-10 w-16 items-center justify-center rounded-md bg-cyan-50 text-stone-300 dark:bg-slate-600 dark:text-slate-500"><i class="fa-solid fa-image"></i></div>
+                            @endif
+                        </td>
                         <td class="px-5 py-4 font-semibold text-forest dark:text-cyan-400">{{ $konten->judul }}</td>
                         <td class="px-5 py-4"><span class="rounded-full bg-gradient-to-r from-cyan-100 to-sky-100 px-2.5 py-0.5 text-[10px] font-bold text-cyan-700 dark:from-slate-600 dark:to-slate-500 dark:text-cyan-400">{{ $konten->kategori }}</span></td>
                         <td class="px-5 py-4 text-stone-600 dark:text-slate-400">{{ $konten->author->name }}</td>
@@ -70,3 +93,15 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function previewGambar(event) {
+    const file = event.target.files && event.target.files[0];
+    const preview = document.getElementById('gambarPreview');
+    if (!file || !preview) return;
+    preview.src = URL.createObjectURL(file);
+    preview.classList.remove('hidden');
+}
+</script>
+@endpush

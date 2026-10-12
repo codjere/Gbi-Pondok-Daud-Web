@@ -26,6 +26,10 @@ class EmailOtpService
             'expires_at' => now()->addMinutes(10),
         ]);
 
+        // Selalu catat kode ke log (memudahkan testing tanpa membuka inbox email).
+        // Cari baris "OTP <email>: <kode>" di storage/logs/laravel.log.
+        Log::info("OTP {$user->email}: {$code}");
+
         try {
             Mail::to($user->email)->send(new EmailOtpMail($user, $code));
         } catch (\Throwable $e) {
@@ -33,10 +37,6 @@ class EmailOtpService
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
             ]);
-        }
-
-        if (config('mail.default') === 'log') {
-            Log::info("OTP {$user->email}: {$code}");
         }
     }
 

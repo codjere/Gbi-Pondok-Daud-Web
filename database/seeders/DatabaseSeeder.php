@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(AiSeeder::class);
+        $this->call(BibleSeeder::class);
 
         $pendeta = [
             'Pdt. Samsu Hadi',
@@ -163,6 +164,7 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->call(ExtraDemoSeeder::class);
+        $this->call(HistoriDemoSeeder::class);
     }
 
     private function mockEmbedding(): array

@@ -14,6 +14,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'avatar',
         'password',
         'role',
         'face_embedding',
@@ -109,5 +110,17 @@ class User extends Authenticatable
         return strtoupper(
             collect($parts)->take(2)->map(fn ($p) => mb_substr($p, 0, 1))->implode('')
         );
+    }
+
+    /**
+     * URL publik foto profil, atau null bila belum punya (pakai inisial sebagai fallback).
+     */
+    public function avatarUrl(): ?string
+    {
+        if (! $this->avatar) {
+            return null;
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk('public')->url($this->avatar);
     }
 }

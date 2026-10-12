@@ -17,6 +17,7 @@
 10. [Flow Sistem Lengkap](#flow-sistem-lengkap)
 11. [Panduan Penggunaan](#panduan-penggunaan)
 12. [Technical Documentation](#technical-documentation)
+13. [Fitur Terbaru (v1.2)](#-fitur-terbaru-v12)
 
 ---
 
@@ -87,6 +88,7 @@ Tabel utama untuk semua user sistem
 | `id` | BIGINT | Primary Key |
 | `name` | VARCHAR(255) | Nama lengkap user |
 | `email` | VARCHAR(255) | Email unik |
+| `avatar` | VARCHAR(255) | Path relatif foto profil pada disk `public` (nullable) |
 | `password` | VARCHAR(255) | Hashed password |
 | `role` | VARCHAR(50) | jemaat/pelayan/pengurus |
 | `face_embedding` | JSON | Vector wajah FaceNet |
@@ -747,7 +749,7 @@ Lihat dokumentasi `ALKITAB_DOCUMENTATION.md` untuk detail lengkap.
 **Location:** `app/Models/User.php`
 
 **Fillable Fields:**
-- `name`, `email`, `password`, `role`, `face_embedding`, `has_biometric`, `email_verified_at`
+- `name`, `email`, `avatar`, `password`, `role`, `face_embedding`, `has_biometric`, `email_verified_at`
 
 **Hidden Fields:**
 - `password`, `remember_token`, `face_embedding`
@@ -763,6 +765,7 @@ Lihat dokumentasi `ALKITAB_DOCUMENTATION.md` untuk detail lengkap.
 - `isJemaat()` - Return true jika role = jemaat
 - `isPelayan()` - Return true jika role = pelayan
 - `initials()` - Generate inisial dari nama
+- `avatarUrl()` - URL publik foto profil, atau `null` bila belum ada (fallback ke inisial)
 
 **Relationships:**
 - `hasMany(Reservasi)` - Reservasi ibadah
@@ -1715,11 +1718,11 @@ Sistem memiliki **automated feature test** (PHPUnit) yang menguji fitur backend 
 | File | Fokus | Jumlah |
 |------|-------|--------|
 | `tests/Feature/AuthTest.php` | Register, login, OTP, biometrik (FaceNet di-mock), guard role, guest redirect, logout | 21 |
-| `tests/Feature/JemaatTest.php` | Dashboard, jadwal, reservasi (termasuk kuota penuh & duplikat), permohonan doa, warta, kuesioner, rekomendasi, chatbot, Alkitab | 25 |
-| `tests/Feature/PengurusTest.php` | Kelola jadwal, kelola konten, laporan, absensi (manual/FaceNet/list), permohonan doa | 20 |
+| `tests/Feature/JemaatTest.php` | Dashboard, jadwal, reservasi (termasuk kuota penuh & duplikat), permohonan doa, warta, kuesioner, rekomendasi, chatbot, Alkitab, **profil & foto profil (upload/hapus/validasi)** | 30 |
+| `tests/Feature/PengurusTest.php` | Kelola jadwal, kelola konten, laporan (**+ breakdown metode & export PDF/Excel**), absensi (manual/FaceNet/list), permohonan doa | 23 |
 | `tests/Feature/SanityTest.php` | Landing page & migrasi database | 2 |
 
-Total: **68 feature test** (+ 2 test bawaan Laravel). Semua lolos pada pengujian terakhir.
+Total: **85 feature test** (termasuk test bawaan). Semua lolos pada pengujian terakhir.
 
 #### **Konfigurasi Test (`phpunit.xml`)**
 
@@ -1932,11 +1935,244 @@ Sistem GBI Pondok Daud adalah sistem manajemen gereja komprehensif dengan:
 
 *Dokumentasi ini dibuat untuk memudahkan pemahaman, pengembangan, dan maintenance sistem GBI Pondok Daud Portal Gereja Management System.*
 
+---
+
+## 🆕 **FITUR TERBARU (v1.2)**
+
+Bagian ini mendokumentasikan tiga pekerjaan pada iterasi terakhir: **(1) Foto Profil Jemaat**, **(2) Laporan Kehadiran yang Diperkaya**, dan **(3) Pengayaan Data Demo (termasuk Alkitab lengkap)**. Setiap bagian menjelaskan perubahan backend beserta alasan desainnya.
+
+---
+
+### **1. Fitur Foto Profil (Avatar)**
+
+Menambahkan kemampuan jemaat mengunggah, menampilkan, dan menghapus foto profil pada halaman Profil yang sudah ada.
+
+#### **1.1 Migration — kolom `avatar`**
+
+**File:** `database/migrations/2026_10_05_000001_add_avatar_to_users_table.php`
+
+Menambahkan satu kolom `avatar` (nullable string) ke tabel `users`, ditempatkan setelah kolom `email`. Kolom ini menyimpan **path relatif** file pada disk `public` (mis. `avatars/abc123.jpg`), bukan URL penuh dan bukan data gambar.
+
+```php
+Schema::table('users', function (Blueprint $table) {
+    $table->string('avatar')->nullable()->after('email');
+});
+```
+
+**Keputusan desain:** foto disimpan sebagai **file di storage** (disk `public`, folder `avatars/`), bukan base64 di database. Alasan: menyimpan biner gambar di DB membengkakkan ukuran tabel dan memperlambat query. Pola file + path adalah standar Laravel dan memerlukan `php artisan storage:link` (symlink `public/storage` → `storage/app/public`) agar file bisa diakses publik.
+
+#### **1.2 Model `User`**
+
+**File:** `app/Models/User.php`
+
+- `avatar` ditambahkan ke `$fillable`.
+- Method baru `avatarUrl()` mengembalikan URL publik foto, atau `null` bila belum ada (view memakai inisial sebagai fallback).
+
+```php
+public function avatarUrl(): ?string
+{
+    if (! $this->avatar) {
+        return null;
+    }
+
+    return \Illuminate\Support\Facades\Storage::disk('public')->url($this->avatar);
+}
+```
+
+Method lama `initials()` tetap dipakai sebagai fallback ketika `avatarUrl()` bernilai `null`.
+
+#### **1.3 Controller — upload & hapus**
+
+**File:** `app/Http/Controllers/Jemaat/ProfileController.php`
+
+Pada `update()`, validasi file ditambahkan dengan pesan error berbahasa Indonesia:
+
+```php
+'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'], // maks 2 MB
+```
+
+Logika penyimpanan: jika ada file ter-upload, hapus avatar lama (bila ada) lalu simpan yang baru. `store('avatars', 'public')` mengembalikan path relatif yang langsung disimpan ke kolom `avatar`.
+
+```php
+if ($request->hasFile('avatar')) {
+    if ($user->avatar) {
+        Storage::disk('public')->delete($user->avatar);
+    }
+    $user->avatar = $request->file('avatar')->store('avatars', 'public');
+}
+```
+
+Method baru `deleteAvatar()` menghapus file dari disk dan meng-null-kan kolom:
+
+```php
+public function deleteAvatar()
+{
+    $user = Auth::user();
+    if ($user->avatar) {
+        Storage::disk('public')->delete($user->avatar);
+        $user->avatar = null;
+        $user->save();
+    }
+    return redirect()->route('jemaat.profil')->with('success', 'Foto profil dihapus.');
+}
+```
+
+#### **1.4 Route**
+
+**File:** `routes/web.php` (grup `jemaat`)
+
+```php
+Route::delete('/profil/foto', [ProfileController::class, 'deleteAvatar'])->name('profil.avatar.delete');
+```
+
+Form hapus dibuat **terpisah** (method `DELETE`) dari form utama profil (method `PUT`), karena satu `<form>` HTML hanya bisa punya satu method.
+
+#### **1.5 View**
+
+- `resources/views/jemaat/profil.blade.php`: form utama kini memakai `enctype="multipart/form-data"` (wajib untuk upload file); input file memakai atribut `form="profilForm"` agar tetap satu submit dengan data profil lainnya; ada pratinjau JavaScript (`URL.createObjectURL`) sebelum simpan, serta tombol hapus (form `DELETE` terpisah).
+- `resources/views/layouts/app.blade.php`: blok user di sidebar menampilkan avatar kecil bila ada, selain itu ikon generik.
+
+#### **1.6 Catatan lingkungan — ekstensi GD**
+
+Pemrosesan gambar (dan `UploadedFile::fake()->image()` pada test) membutuhkan ekstensi **GD**. Pada XAMPP di mesin ini, `extension=gd` di `C:\xampp\php\php.ini` sempat dinonaktifkan dan telah diaktifkan. **Apache perlu di-restart** agar web server mengenali perubahan ini (CLI sudah mengenalinya).
+
+---
+
+### **2. Laporan Kehadiran yang Diperkaya**
+
+Menu Laporan pengurus diperluas dari sekadar tabel per-sesi menjadi laporan analitik dengan **export PDF & Excel**, **grafik tren kehadiran**, dan **breakdown metode verifikasi (FaceNet vs manual)**.
+
+#### **2.1 Dependensi baru**
+
+```bash
+composer require barryvdh/laravel-dompdf maatwebsite/excel
+```
+
+- `barryvdh/laravel-dompdf` → render PDF dari Blade.
+- `maatwebsite/excel` → export file `.xlsx`.
+
+#### **2.2 Controller**
+
+**File:** `app/Http/Controllers/Pengurus/LaporanController.php`
+
+Dirombak dengan satu method privat `buildReport()` yang dipakai bersama oleh tampilan dan kedua export, agar sumber data konsisten (DRY). Isinya:
+
+- **Statistik per sesi** — total hadir, kuota, persentase kehadiran.
+- **Breakdown metode verifikasi** — jumlah & persentase `facenet` vs `manual` untuk sesi terpilih.
+- **Tren kehadiran** — mengambil 10 sesi terakhir via `withCount('kehadiran')`, diurutkan menaik berdasarkan tanggal untuk grafik garis.
+
+```php
+$metode['facenet'] = $kehadiran->where('metode_verifikasi', 'facenet')->count();
+$metode['manual']  = $kehadiran->where('metode_verifikasi', 'manual')->count();
+
+$trenSource = JadwalIbadah::withCount('kehadiran')
+    ->orderByDesc('tanggal')->take(10)->get()
+    ->sortBy('tanggal')->values();
+```
+
+Dua action export:
+
+```php
+public function exportPdf(Request $request)   // Pdf::loadView('pengurus.laporan-pdf', $data)->download(...)
+public function exportExcel(Request $request) // Excel::download(new KehadiranExport($jadwal), ...)
+```
+
+Keduanya memanggil `buildReport()` dan `abort_unless($data['jadwal'], 404)` bila sesi tidak ditemukan.
+
+#### **2.3 Export class**
+
+**File:** `app/Exports/KehadiranExport.php`
+
+Implementasi `FromCollection`, `WithHeadings`, dan `WithMapping` dari maatwebsite/excel. `collection()` mengambil kehadiran satu sesi (eager-load `user`); `map()` memetakan tiap baris menjadi kolom No, Nama, Email, Peran, Waktu Check-in, dan Metode Verifikasi (nilai `facenet` ditampilkan sebagai "Pengenalan Wajah").
+
+#### **2.4 View**
+
+- `resources/views/pengurus/laporan-pdf.blade.php` — template cetak (HTML + CSS inline, font DejaVu Sans untuk dompdf) berisi kop gereja, metadata sesi, kartu statistik, dan tabel daftar hadir.
+- `resources/views/pengurus/laporan.blade.php` — tombol PDF/Excel asli (menggantikan tombol dummy), grafik **tren** (Chart.js line) dan **metode verifikasi** (Chart.js doughnut) via CDN, serta badge metode yang lebih manusiawi ("Wajah"/"Manual"). Script Chart.js dibungkus `@push('scripts')` dan sadar dark mode.
+
+#### **2.5 Route**
+
+**File:** `routes/web.php` (grup `pengurus`)
+
+```php
+Route::get('/laporan/pdf',   [LaporanController::class, 'exportPdf'])->name('laporan.pdf');
+Route::get('/laporan/excel', [LaporanController::class, 'exportExcel'])->name('laporan.excel');
+```
+
+---
+
+### **3. Pengayaan Data Demo**
+
+Menambah data agar aplikasi terasa hidup, sekaligus **memperbaiki bug lama**: Alkitab hanya berisi Kejadian 1–2.
+
+#### **3.1 `BibleSeeder` kini dipanggil `DatabaseSeeder`**
+
+**File:** `database/seeders/DatabaseSeeder.php`
+
+Sebelumnya `DatabaseSeeder` **tidak** memanggil `BibleSeeder`, sehingga setiap `migrate:fresh --seed` menghasilkan Alkitab kosong (akar masalah "cuma Kejadian 1–2"). Sekarang dipanggil setelah `AiSeeder`:
+
+```php
+$this->call(AiSeeder::class);
+$this->call(BibleSeeder::class);   // ← ditambahkan
+...
+$this->call(ExtraDemoSeeder::class);
+$this->call(HistoriDemoSeeder::class); // ← ditambahkan
+```
+
+`BibleSeeder` menjalankan command `bible:import` yang mengunduh teks AYT lengkap. Hasil seeding terakhir: **66 kitab, 1.189 pasal, 31.102 ayat**. Bila unduhan gagal (offline), seeder otomatis fallback ke data sample.
+
+#### **3.2 Seeder baru `HistoriDemoSeeder`**
+
+**File:** `database/seeders/HistoriDemoSeeder.php`
+
+Menghidupkan laporan tanpa melanggar aturan desain lama ("daftar hadir jangan terisi otomatis"). **Aturan kunci: kehadiran hanya untuk ibadah yang tanggalnya SUDAH LEWAT (status `selesai`).** Isi seeder:
+
+- **6 jemaat tambahan** beserta `user_profiles` lengkap (minat/bakat/ketersediaan) → menyuburkan dashboard & rekomendasi.
+- **6 ibadah raya lampau** (status `selesai`) + kehadiran historis dengan pola jumlah bervariasi (9–13 orang) supaya grafik tren menarik. Metode verifikasi dibuat ~75% `facenet`, ~25% `manual`, mencerminkan fokus sistem pada pengenalan wajah.
+- **Reservasi** untuk ibadah **mendatang** (~60% kuota) — wajar karena jemaat memesan tempat; kehadiran tetap kosong karena belum hari-H.
+
+Semua penulisan memakai `firstOrCreate` agar idempoten (aman dijalankan berulang; menghormati unique constraint `(user_id, jadwal_ibadah_id)` pada tabel `kehadiran` dan `reservasi`).
+
+#### **3.3 Hasil akhir database (setelah `migrate:fresh --seed`)**
+
+| Entitas | Jumlah |
+|---------|--------|
+| Users | 21 (19 jemaat) |
+| User profiles | 10 |
+| Jadwal ibadah | 14 (7 selesai) |
+| Kehadiran | 63 (45 FaceNet / 18 manual) |
+| Reservasi | 105 |
+| Konten warta | 7 |
+| Permohonan doa | 6 |
+| Kitab / Pasal / Ayat | 66 / 1.189 / 31.102 |
+| Reading plan | 2 |
+| Tim pelayanan / COOL / FAQ | 6 / 6 / 8 |
+
+Login demo: `admin@gbipondokdaud.id` (pengurus) & jemaat seperti `andi@email.com`, semua password `password123`.
+
+---
+
+### **4. Verifikasi Fitur Terbaru**
+
+- **Automated test**: ditambah test foto profil (upload/hapus/validasi) di `JemaatTest.php` dan test laporan (breakdown + export PDF/Excel) di `PengurusTest.php`. Total suite menjadi **85 feature test**, semua lolos.
+- **Smoke test manual**: 22 route (jemaat & pengurus) diuji terhadap database ber-seed, termasuk laporan + export, Alkitab hingga **Wahyu 22**, dan chatbot — seluruhnya mengembalikan 200/302 (tanpa error 500).
+
+> Catatan: route baca Alkitab adalah `GET /jemaat/alkitab/kitab/{kitabId}/pasal/{nomorPasal}` (name `jemaat.alkitab.baca`).
+
+---
+
 **Last Updated:** 2026-09-10
-**Version:** 1.1
+**Version:** 1.2
 **Author:** Devin AI Assistant
 
 ### **Changelog**
+
+**v1.2 (2026-09-10)**
+- Tambah section **Fitur Terbaru (v1.2)**: Foto Profil (avatar) jemaat, Laporan Kehadiran yang diperkaya (export PDF & Excel, grafik tren, breakdown metode verifikasi), dan Pengayaan Data Demo.
+- Dokumentasikan perbaikan bug Alkitab: `BibleSeeder` kini dipanggil `DatabaseSeeder` sehingga Alkitab terisi lengkap (66 kitab / 1.189 pasal / 31.102 ayat), bukan hanya Kejadian 1–2.
+- Dokumentasikan seeder baru `HistoriDemoSeeder` (kehadiran historis hanya untuk ibadah yang sudah lewat; reservasi untuk ibadah mendatang).
+- Catat penambahan dependensi `barryvdh/laravel-dompdf` & `maatwebsite/excel`, serta pengaktifan ekstensi GD (perlu restart Apache).
+- Suite test bertambah menjadi **85 feature test** (dari 68/77), semua lolos.
 
 **v1.1 (2026-09-10)**
 - Koreksi versi framework: Laravel 11 → **Laravel 12**.

@@ -8,7 +8,9 @@ use App\Models\KontenWarta;
 use App\Models\PermohonanDoa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class PengurusTest extends TestCase
@@ -104,6 +106,77 @@ class PengurusTest extends TestCase
         $this->assertDatabaseHas('konten_warta', ['judul' => 'Ibadah Natal', 'kategori' => 'Pengumuman']);
     }
 
+    public function test_konten_store_with_image(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAs($this->pengurus())->post(route('pengurus.konten.store'), [
+            'kategori' => 'Renungan Harian',
+            'judul' => 'Renungan Bergambar',
+            'isi' => 'Isi renungan yang cukup panjang untuk lolos validasi minimal.',
+            'gambar' => UploadedFile::fake()->image('warta.jpg', 400, 300),
+        ])->assertSessionHas('success');
+
+        $konten = KontenWarta::where('judul', 'Renungan Bergambar')->first();
+        $this->assertNotNull($konten);
+        $this->assertNotNull($konten->gambar);
+        $this->assertStringStartsWith('warta/', $konten->gambar);
+        Storage::disk('public')->assertExists($konten->gambar);
+    }
+
+    public function test_konten_store_rejects_non_image(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAs($this->pengurus())->post(route('pengurus.konten.store'), [
+            'kategori' => 'Pengumuman',
+            'judul' => 'Dokumen Bukan Gambar',
+            'isi' => 'Isi konten yang cukup panjang untuk lolos validasi minimal.',
+            'gambar' => UploadedFile::fake()->create('file.pdf', 100, 'application/pdf'),
+        ])->assertSessionHasErrors('gambar');
+    }
+
+    public function test_warta_detail_shows_image(): void
+    {
+        $warta = KontenWarta::create([
+            'user_id' => $this->pengurus()->id,
+            'kategori' => 'Renungan Harian',
+            'judul' => 'Renungan Tampil Gambar',
+            'isi' => 'Isi renungan untuk menguji tampilan gambar pada halaman detail.',
+            'gambar' => 'warta/contoh.jpg',
+            'published_at' => now()->subDay(),
+        ]);
+
+        $this->actingAs($this->jemaat())
+            ->get(route('jemaat.warta.show', $warta->slug))
+            ->assertOk()
+            ->assertSee('warta/contoh.jpg');
+    }
+
+    public function test_konten_destroy_removes_image_file(): void
+    {
+        Storage::fake('public');
+        $path = UploadedFile::fake()->image('hapus.jpg')->store('warta', 'public');
+
+        $konten = KontenWarta::create([
+            'user_id' => $this->pengurus()->id,
+            'kategori' => 'Pengumuman',
+            'judul' => 'Konten Bergambar Dihapus',
+            'isi' => 'Konten ini beserta gambarnya akan dihapus dari sistem.',
+            'gambar' => $path,
+            'published_at' => now(),
+        ]);
+
+        Storage::disk('public')->assertExists($path);
+
+        $this->actingAs($this->pengurus())
+            ->delete(route('pengurus.konten.destroy', $konten))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('konten_warta', ['id' => $konten->id]);
+        Storage::disk('public')->assertMissing($path);
+    }
+
     public function test_konten_store_rejects_bad_category(): void
     {
         $this->actingAs($this->pengurus())->post(route('pengurus.konten.store'), [
@@ -144,6 +217,43 @@ class PengurusTest extends TestCase
         $this->actingAs($this->pengurus())
             ->get(route('pengurus.laporan', ['jadwal_id' => $jadwal->id]))
             ->assertOk();
+    }
+
+    public function test_laporan_shows_verification_breakdown(): void
+    {
+        $jadwal = $this->makeJadwal();
+        Kehadiran::create(['user_id' => $this->jemaat()->id, 'jadwal_ibadah_id' => $jadwal->id, 'waktu_checkin' => now(), 'metode_verifikasi' => 'facenet']);
+        Kehadiran::create(['user_id' => $this->jemaat()->id, 'jadwal_ibadah_id' => $jadwal->id, 'waktu_checkin' => now(), 'metode_verifikasi' => 'manual']);
+
+        $this->actingAs($this->pengurus())
+            ->get(route('pengurus.laporan', ['jadwal_id' => $jadwal->id]))
+            ->assertOk()
+            ->assertSee('Metode Verifikasi')
+            ->assertSee('Tren Kehadiran');
+    }
+
+    public function test_laporan_export_pdf(): void
+    {
+        $jadwal = $this->makeJadwal();
+        Kehadiran::create(['user_id' => $this->jemaat()->id, 'jadwal_ibadah_id' => $jadwal->id, 'waktu_checkin' => now(), 'metode_verifikasi' => 'facenet']);
+
+        $res = $this->actingAs($this->pengurus())
+            ->get(route('pengurus.laporan.pdf', ['jadwal_id' => $jadwal->id]));
+
+        $res->assertOk();
+        $this->assertEquals('application/pdf', $res->headers->get('content-type'));
+    }
+
+    public function test_laporan_export_excel(): void
+    {
+        $jadwal = $this->makeJadwal();
+        Kehadiran::create(['user_id' => $this->jemaat()->id, 'jadwal_ibadah_id' => $jadwal->id, 'waktu_checkin' => now(), 'metode_verifikasi' => 'manual']);
+
+        $res = $this->actingAs($this->pengurus())
+            ->get(route('pengurus.laporan.excel', ['jadwal_id' => $jadwal->id]));
+
+        $res->assertOk();
+        $this->assertStringContainsString('spreadsheet', $res->headers->get('content-type'));
     }
 
     // ---------- Absen ----------

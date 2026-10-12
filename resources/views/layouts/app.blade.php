@@ -88,32 +88,36 @@
 
         /* Aksen dark diredam: tan/khaki tenang, bukan emas berkilau. Kalem &
            manusiawi. */
-        :where(.dark) .text-forest { color: #b39a70; }
-        :where(.dark) .text-forest-mid { color: #c4ad84; }
-        :where(.dark) .text-gold { color: #bfa678; }
+        /* Aksen (judul, link) di dark mode — emas cerah agar mudah dibaca. */
+        :where(.dark) .text-forest { color: #e3c892; }
+        :where(.dark) .text-forest-mid { color: #ecd6a6; }
+        :where(.dark) .text-gold { color: #e8c87e; }
         :where(.dark) .bg-forest { background-color: #242422; }
         :where(.dark) .bg-forest-mid { background-color: #1a1a18; }
         :where(.dark) .bg-gold-soft { background-color: #242422; }
         :where(.dark) .bg-cream { background-color: #242422; }
 
-        /* Teks */
-        :where(.dark) .text-stone-800 { color: #e7e3da; }
-        :where(.dark) .text-stone-600 { color: #b9b4aa; }
-        :where(.dark) .text-stone-500 { color: #8a867d; }
-        :where(.dark) .text-stone-400 { color: #6a675f; }
-        :where(.dark) .text-cyan-400 { color: #b39a70; }
-        :where(.dark) .text-cyan-500 { color: #c4ad84; }
-        :where(.dark) .text-cyan-600 { color: #b39a70; }
-        :where(.dark) .text-cyan-700 { color: #b39a70; }
-        :where(.dark) .text-sky-400 { color: #c4ad84; }
-        :where(.dark) .text-sky-500 { color: #c4ad84; }
-        :where(.dark) .text-sky-700 { color: #b39a70; }
-        :where(.dark) .text-amber-400 { color: #bfa678; }
-        :where(.dark) .text-blue-400 { color: #8f9a92; }
-        :where(.dark) .text-emerald-600 { color: #7fa588; }
+        /* Teks — kontras dinaikkan supaya terbaca jelas di atas latar gelap. */
+        :where(.dark) .text-stone-900 { color: #f4f2ec; }
+        :where(.dark) .text-stone-800 { color: #efede7; }
+        :where(.dark) .text-stone-700 { color: #e3e0d8; }   /* teks utama (ayat Alkitab, isi warta) */
+        :where(.dark) .text-stone-600 { color: #cfcbc2; }
+        :where(.dark) .text-stone-500 { color: #aeaaa1; }
+        :where(.dark) .text-stone-400 { color: #948f87; }
+        :where(.dark) .text-stone-300 { color: #a6a299; }
+        :where(.dark) .text-cyan-400 { color: #e3c892; }
+        :where(.dark) .text-cyan-500 { color: #ecd6a6; }
+        :where(.dark) .text-cyan-600 { color: #e3c892; }
+        :where(.dark) .text-cyan-700 { color: #e3c892; }
+        :where(.dark) .text-sky-400 { color: #ecd6a6; }
+        :where(.dark) .text-sky-500 { color: #ecd6a6; }
+        :where(.dark) .text-sky-700 { color: #e3c892; }
+        :where(.dark) .text-amber-400 { color: #e8c87e; }
+        :where(.dark) .text-blue-400 { color: #a7b7cc; }
+        :where(.dark) .text-emerald-600 { color: #86cf9a; }
 
         /* Latar — card charcoal muted, menonjol halus dari background near-black. */
-        :where(.dark) .bg-white { background-color: #1a1a18; color: #e7e3da; }
+        :where(.dark) .bg-white { background-color: #1f1f1d; color: #efede7; }
         :where(.dark) .bg-stone-100 { background-color: #242422; }
         :where(.dark) .bg-amber-100 { background-color: #242422; }
         :where(.dark) .bg-blue-100 { background-color: #242422; }
@@ -460,9 +464,14 @@
         <div class="border-t border-white/10 px-4 py-4">
             <div class="flex items-center gap-3">
                 <a href="{{ route('jemaat.profil') }}" onclick="closeSidebar()" class="group flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 transition hover:bg-white/10" title="Lihat & edit profil">
-                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold/20 text-gold">
-                        <i class="fa-solid fa-user text-xs"></i>
-                    </div>
+                    @if(auth()->user()->avatarUrl())
+                        <img src="{{ auth()->user()->avatarUrl() }}" alt="Foto profil"
+                             class="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-white/20">
+                    @else
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold/20 text-gold">
+                            <i class="fa-solid fa-user text-xs"></i>
+                        </div>
+                    @endif
                     <div class="min-w-0 flex-1">
                         <p class="truncate text-xs font-medium text-white group-hover:underline">{{ auth()->user()->name }}</p>
                         <p class="truncate text-[10px] text-white/50">Lihat & edit profil</p>

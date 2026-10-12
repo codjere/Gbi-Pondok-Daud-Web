@@ -10,9 +10,14 @@
     {{-- Header kartu profil --}}
     <div class="mb-6 rounded-2xl bg-gradient-to-br from-forest via-forest-mid to-cyan-500 p-6 text-white shadow-lg dark:from-slate-700 dark:via-slate-600 dark:to-cyan-600">
         <div class="flex items-center gap-4">
-            <div class="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 text-2xl font-extrabold">
-                {{ strtoupper(substr($user->name, 0, 1)) }}
-            </div>
+            @if($user->avatarUrl())
+                <img src="{{ $user->avatarUrl() }}" alt="Foto profil {{ $user->name }}"
+                     class="h-16 w-16 flex-shrink-0 rounded-full object-cover ring-2 ring-white/40">
+            @else
+                <div class="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-white/20 text-2xl font-extrabold">
+                    {{ $user->initials() }}
+                </div>
+            @endif
             <div class="min-w-0">
                 <h2 class="truncate text-xl font-extrabold">{{ $user->name }}</h2>
                 <p class="text-sm text-white/80">{{ $user->email }}</p>
@@ -31,7 +36,46 @@
         </div>
     </div>
 
-    <form action="{{ route('jemaat.profil.update') }}" method="POST" class="space-y-6">
+    {{-- Foto Profil (form terpisah untuk aksi hapus) --}}
+    <div class="mb-6 rounded-2xl bg-white p-6 shadow-md ring-1 ring-cyan-200/60 dark:bg-slate-700 dark:ring-slate-600">
+        <p class="mb-4 text-sm font-bold text-forest dark:text-cyan-400"><i class="fa-solid fa-camera mr-2 text-gold"></i>Foto Profil</p>
+        <div class="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
+            @if($user->avatarUrl())
+                <img id="avatarPreview" src="{{ $user->avatarUrl() }}" alt="Foto profil"
+                     class="h-24 w-24 flex-shrink-0 rounded-full object-cover ring-2 ring-cyan-200 dark:ring-slate-500">
+            @else
+                <div id="avatarPlaceholder" class="flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-full bg-cyan-100 text-3xl font-extrabold text-forest dark:bg-slate-800 dark:text-cyan-400">
+                    {{ $user->initials() }}
+                </div>
+                <img id="avatarPreview" src="" alt="Pratinjau foto" class="hidden h-24 w-24 flex-shrink-0 rounded-full object-cover ring-2 ring-cyan-200 dark:ring-slate-500">
+            @endif
+
+            <div class="flex-1 text-center sm:text-left">
+                <label class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-forest px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-forest-mid dark:bg-cyan-600 dark:hover:bg-cyan-500">
+                    <i class="fa-solid fa-upload"></i>
+                    <span>Pilih Foto</span>
+                    <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" form="profilForm"
+                           class="hidden" onchange="previewAvatar(event)">
+                </label>
+                <p class="mt-2 text-xs text-stone-500 dark:text-slate-400">JPG, PNG, atau WEBP. Maks 2 MB. Simpan dengan tombol di bawah.</p>
+                @error('avatar')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
+            </div>
+
+            @if($user->avatarUrl())
+                <form action="{{ route('jemaat.profil.avatar.delete') }}" method="POST"
+                      onsubmit="return confirm('Hapus foto profil?');" class="flex-shrink-0">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50">
+                        <i class="fa-solid fa-trash"></i>
+                        <span>Hapus</span>
+                    </button>
+                </form>
+            @endif
+        </div>
+    </div>
+
+    <form id="profilForm" action="{{ route('jemaat.profil.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
         @csrf
         @method('PUT')
 
@@ -164,3 +208,22 @@
     </form>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function previewAvatar(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const preview = document.getElementById('avatarPreview');
+    const placeholder = document.getElementById('avatarPlaceholder');
+    if (preview) {
+        preview.src = url;
+        preview.classList.remove('hidden');
+    }
+    if (placeholder) {
+        placeholder.classList.add('hidden');
+    }
+}
+</script>
+@endpush

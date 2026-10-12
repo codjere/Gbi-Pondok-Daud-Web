@@ -17,6 +17,22 @@ class BibleSeeder extends Seeder
      */
     public function run(): void
     {
+        // Coba impor teks Alkitab LENGKAP (AYT) lebih dulu via command bible:import.
+        // Jika berhasil (ada ayat), lewati seeding sample dan langsung ke reading plans.
+        try {
+            \Illuminate\Support\Facades\Artisan::call('bible:import');
+            if (\App\Models\Ayat::count() > 0) {
+                $this->command->info('Teks Alkitab lengkap diimpor via bible:import ('.\App\Models\Ayat::count().' ayat).');
+                $this->seedReadingPlans();
+                $this->command->info('Bible Seeder selesai (mode lengkap).');
+                return;
+            }
+            $this->command->warn('Impor penuh tidak menghasilkan ayat; memakai data sample sebagai fallback.');
+        } catch (\Throwable $e) {
+            $this->command->warn('bible:import gagal ('.$e->getMessage().'); memakai data sample sebagai fallback.');
+        }
+
+        // ===== FALLBACK (offline): seed daftar kitab + sample pasal/ayat =====
         // 1. Seed Kitab (Books) - Sample beberapa kitab untuk demo
         $kitabs = [
             // Perjanjian Lama

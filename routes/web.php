@@ -53,6 +53,7 @@ Route::middleware(['auth', 'verified.otp'])->group(function () {
     Route::prefix('jemaat')->name('jemaat.')->group(function () {
         Route::get('/profil', [\App\Http\Controllers\Jemaat\ProfileController::class, 'edit'])->name('profil');
         Route::put('/profil', [\App\Http\Controllers\Jemaat\ProfileController::class, 'update'])->name('profil.update');
+        Route::delete('/profil/foto', [\App\Http\Controllers\Jemaat\ProfileController::class, 'deleteAvatar'])->name('profil.avatar.delete');
         Route::get('/jadwal', [JemaatJadwalController::class, 'index'])->name('jadwal');
         Route::get('/reservasi', [ReservasiController::class, 'index'])->name('reservasi');
         Route::post('/reservasi/{jadwal}', [ReservasiController::class, 'store'])->name('reservasi.store');
@@ -87,6 +88,8 @@ Route::middleware(['auth', 'verified.otp'])->group(function () {
         Route::post('/konten', [KontenController::class, 'store'])->name('konten.store');
         Route::delete('/konten/{konten}', [KontenController::class, 'destroy'])->name('konten.destroy');
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan');
+        Route::get('/laporan/pdf', [LaporanController::class, 'exportPdf'])->name('laporan.pdf');
+        Route::get('/laporan/excel', [LaporanController::class, 'exportExcel'])->name('laporan.excel');
         Route::get('/absen', [AbsenController::class, 'index'])->name('absen');
         Route::post('/absen/verify', [AbsenController::class, 'verify'])->name('absen.verify')->middleware('session.expiration');
         Route::post('/absen/manual', [AbsenController::class, 'manual'])->name('absen.manual');

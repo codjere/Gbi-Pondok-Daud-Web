@@ -111,6 +111,9 @@
         <div class="lg:col-span-2 rounded-2xl bg-gradient-to-br from-gold-soft via-white to-cyan-50 p-6 ring-1 ring-gold/20 fade-in stagger-3 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 dark:ring-slate-600">
             @if ($renungan)
                 <p class="text-xs font-semibold uppercase tracking-wider text-gold">Renungan Terbaru</p>
+                @if ($renungan->gambarUrl())
+                    <img src="{{ $renungan->gambarUrl() }}" alt="{{ $renungan->judul }}" class="mt-3 h-40 w-full rounded-xl object-cover">
+                @endif
                 <p class="mt-3 text-lg font-bold leading-snug text-forest dark:text-cyan-400">{{ $renungan->judul }}</p>
                 <p class="mt-2 line-clamp-4 text-sm text-stone-600 dark:text-slate-400">{{ Str::limit($renungan->isi, 160) }}</p>
                 <p class="mt-2 text-xs text-stone-500 dark:text-slate-500">{{ $renungan->author->name ?? 'GBI Pondok Daud' }} · {{ $renungan->published_at->translatedFormat('d M Y') }}</p>

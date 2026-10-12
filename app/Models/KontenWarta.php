@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class KontenWarta extends Model
@@ -16,6 +17,7 @@ class KontenWarta extends Model
         'judul',
         'slug',
         'isi',
+        'gambar',
         'published_at',
     ];
 
@@ -38,6 +40,18 @@ class KontenWarta extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * URL publik gambar warta, atau null bila tidak ada gambar.
+     */
+    public function gambarUrl(): ?string
+    {
+        if (! $this->gambar) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->gambar);
     }
 
     public function scopePublished($query)
