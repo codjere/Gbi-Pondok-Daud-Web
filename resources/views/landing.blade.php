@@ -59,7 +59,7 @@
             </h1>
 
             <p class="mt-6 max-w-xl text-base leading-relaxed text-stone-600 sm:text-lg dark:text-slate-400">
-                Reservasi ibadah, permohonan doa, renungan harian, sampai presensi pelayan berbasis pengenalan wajah — semua di satu tempat. Dipimpin oleh Pdt. Samsu Hadi, Pdt. Lisna Tappi, dan Pdt. Ficky Benyaminsz.
+                Reservasi ibadah, permohonan doa, renungan harian, sampai presensi pelayan berbasis pengenalan wajah — semua di satu tempat. Dipimpin oleh Pdt. Ficky Benyaminsz, Pdt. Lisna Tappi, dan Pdt. Samsu Hadi.
             </p>
 
             <div class="mt-8 flex flex-wrap items-center gap-3">
@@ -99,7 +99,7 @@
                     <div class="flex items-center gap-3">
                         <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-forest/10 text-forest dark:bg-sky-400/10 dark:text-sky-400"><i class="fa-solid fa-people-group"></i></div>
                         <div>
-                            <p class="font-bold text-forest dark:text-sky-400">Ibadah Raya — Pdt. Samsu Hadi</p>
+                            <p class="font-bold text-forest dark:text-sky-400">Ibadah Raya — Pdt. Ficky Benyaminsz</p>
                             <p class="text-xs text-stone-500 dark:text-slate-500">Minggu · 08:00 · Ruang Utama</p>
                         </div>
                     </div>

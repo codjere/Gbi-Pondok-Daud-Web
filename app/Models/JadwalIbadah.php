@@ -17,6 +17,7 @@ class JadwalIbadah extends Model
         'jam_selesai',
         'pembicara',
         'lokasi',
+        'meeting_link',
         'batas_kuota',
         'status',
     ];
@@ -85,5 +86,36 @@ class JadwalIbadah extends Model
     public function scopeTerbaru($query)
     {
         return $query->orderBy('tanggal')->orderBy('jam_mulai');
+    }
+
+    /**
+     * Morning Prayer: kegiatan doa harian tetap setiap jam 05:00 WITA.
+     *
+     * Dibuat sebagai objek virtual (tidak disimpan ke database) sehingga
+     * selalu tampil di jadwal setiap hari tanpa perlu scheduler. Tanggal
+     * di-set ke hari ini agar lolos filter scopeAktif. Ditandai is_daily
+     * supaya tampilan tidak menampilkan opsi reservasi/kuota.
+     */
+    public static function morningPrayer(): self
+    {
+        $jadwal = new self([
+            'nama_sesi' => 'Morning Prayer',
+            'deskripsi' => 'Doa pagi bersama setiap hari secara online via Zoom. Terbuka untuk seluruh jemaat.',
+            'tanggal' => now()->toDateString(),
+            'jam_mulai' => '05:00',
+            'jam_selesai' => '06:00',
+            'pembicara' => 'Tim Pendoa GBI Pondok Daud',
+            'lokasi' => 'Online (Zoom)',
+            'meeting_link' => 'https://zoom.us/j/7628887157?pwd=VlM4TFp2dFI3S0ovcFdjUGxMYys2dz09',
+            'batas_kuota' => 0,
+            'status' => 'terpublikasi',
+        ]);
+
+        // Penanda bahwa ini kegiatan harian (bukan ibadah ber-kuota).
+        $jadwal->is_daily = true;
+        // Exists=false memastikan ini tidak dianggap tersimpan di DB.
+        $jadwal->exists = false;
+
+        return $jadwal;
     }
 }

@@ -59,6 +59,10 @@
                             Mulai Scan
                         </button>
                     </div>
+                    <div data-camera-select-wrap class="hidden items-center gap-2 bg-stone-800 px-5 py-2.5">
+                        <label for="cameraSelect" class="text-[11px] font-semibold text-white/50"><i class="fa-solid fa-camera mr-1"></i>Kamera</label>
+                        <select id="cameraSelect" class="flex-1 rounded-lg bg-stone-700 px-2.5 py-1.5 text-xs text-white outline-none ring-1 ring-white/10"></select>
+                    </div>
                 </div>
 
                 <div class="mt-4 rounded-2xl bg-white p-4 ring-1 ring-stone-200/80">
@@ -117,6 +121,7 @@
 
 @push('scripts')
 @if ($serviceOnline)
+<script src="{{ asset('js/camera-select.js') }}"></script>
 <script>
 (function () {
     const video = document.getElementById('video');
@@ -124,6 +129,7 @@
     const ctx = canvas.getContext('2d');
     const toggleBtn = document.getElementById('toggleScan');
     const scanStatus = document.getElementById('scanStatus');
+    const cameraSelect = document.getElementById('cameraSelect');
     const jadwalSelect = document.getElementById('jadwalSelect');
     const absenLog = document.getElementById('absenLog');
     const overlay = document.getElementById('overlay');
@@ -138,16 +144,23 @@
     let processing = false;
     let cooldown = false;
 
-    async function initCamera() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
-            });
-            video.srcObject = stream;
-            scanStatus.textContent = 'Kamera siap. Pilih sesi ibadah lalu klik Mulai Scan.';
-        } catch (err) {
-            scanStatus.textContent = 'Kamera tidak dapat diakses.';
-        }
+    const camera = window.CameraSelect.create({
+        video: video,
+        select: cameraSelect,
+        onReady: function (stream, info) {
+            if (info && info.usedFallback) {
+                scanStatus.textContent = 'Kamera utama tidak tersedia — memakai DroidCam. Pilih sesi lalu klik Mulai Scan.';
+            } else {
+                scanStatus.textContent = 'Kamera siap. Pilih sesi ibadah lalu klik Mulai Scan.';
+            }
+        },
+        onError: function (err, message) {
+            scanStatus.textContent = message;
+        },
+    });
+
+    function initCamera() {
+        camera.start();
     }
 
     function showOverlay(html, bgClass) {

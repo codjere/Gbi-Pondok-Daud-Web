@@ -56,7 +56,7 @@ class ExtraDemoSeeder extends Seeder
             ]
         );
 
-        $pendeta = ['Pdt. Samsu Hadi', 'Pdt. Lisna Tappi', 'Pdt. Ficky Benyaminsz'];
+        $pendeta = ['Pdt. Ficky Benyaminsz', 'Pdt. Lisna Tappi', 'Pdt. Samsu Hadi'];
 
         $extraJadwals = [
             [

@@ -19,9 +19,9 @@ class DatabaseSeeder extends Seeder
         $this->call(BibleSeeder::class);
 
         $pendeta = [
-            'Pdt. Samsu Hadi',
-            'Pdt. Lisna Tappi',
             'Pdt. Ficky Benyaminsz',
+            'Pdt. Lisna Tappi',
+            'Pdt. Samsu Hadi',
         ];
 
         $pengurus = User::create([
@@ -133,12 +133,12 @@ class DatabaseSeeder extends Seeder
             [
                 'kategori' => 'Renungan Harian',
                 'judul' => 'Tuhan Adalah Gembala ku, Tidak Kekurangan Aku',
-                'isi' => "Dalam kehidupan yang penuh tantangan, Mazmur 23 mengingatkan kita bahwa Tuhan memimpin jalan kita ke tempat yang hijau dan memulihkan jiwa kita.\n\nKetika kita merasa letih dan berbeban berat, gembala yang baik tidak pernah meninggalkan domba-domba-Nya. Pdt. Samsu Hadi mengajak jemaat GBI Pondok Daud untuk percaya bahwa di setiap musim kehidupan, Tuhan hadir sebagai gembala yang setia.\n\n\"Tuhan adalah gembalaku, tidak kekurangan aku.\" — Mazmur 23:1",
+                'isi' => "Dalam kehidupan yang penuh tantangan, Mazmur 23 mengingatkan kita bahwa Tuhan memimpin jalan kita ke tempat yang hijau dan memulihkan jiwa kita.\n\nKetika kita merasa letih dan berbeban berat, gembala yang baik tidak pernah meninggalkan domba-domba-Nya. Pdt. Ficky Benyaminsz mengajak jemaat GBI Pondok Daud untuk percaya bahwa di setiap musim kehidupan, Tuhan hadir sebagai gembala yang setia.\n\n\"Tuhan adalah gembalaku, tidak kekurangan aku.\" — Mazmur 23:1",
             ],
             [
                 'kategori' => 'Berita Kegiatan',
                 'judul' => 'Konferensi Pemuda GBI Pondok Daud 2026 Resmi Dibuka',
-                'isi' => "GBI Pondok Daud dengan sukacita mengumumkan pembukaan Konferensi Pemuda 2026. Acara ini akan dipimpin oleh Pdt. Ficky Benyaminsz dan dihadiri ratusan pemuda dari seluruh jemaat.\n\nPendaftaran dibuka melalui portal GBI Pondok Daud. Jangan lewatkan sesi worship dan seminar rohani yang telah disiapkan.",
+                'isi' => "GBI Pondok Daud dengan sukacita mengumumkan pembukaan Konferensi Pemuda 2026. Acara ini akan dipimpin oleh Pdt. Samsu Hadi dan dihadiri ratusan pemuda dari seluruh jemaat.\n\nPendaftaran dibuka melalui portal GBI Pondok Daud. Jangan lewatkan sesi worship dan seminar rohani yang telah disiapkan.",
             ],
             [
                 'kategori' => 'Renungan Harian',

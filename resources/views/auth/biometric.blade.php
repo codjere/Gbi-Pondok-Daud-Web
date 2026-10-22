@@ -45,6 +45,10 @@
                     <div id="progressBar" class="h-full rounded-full bg-gold transition-all duration-300" style="width: 0%"></div>
                 </div>
                 <p id="countText" class="mt-2 text-xs text-stone-500 dark:text-slate-400">0 / {{ config('facenet.samples_required') }} sampel</p>
+                <div data-camera-select-wrap class="mx-auto mt-3 hidden max-w-[280px] items-center justify-center gap-2">
+                    <label for="bioCameraSelect" class="text-[11px] font-semibold text-stone-500 dark:text-slate-400"><i class="fa-solid fa-camera mr-1"></i>Kamera</label>
+                    <select id="bioCameraSelect" class="flex-1 rounded-lg bg-stone-100 px-2.5 py-1.5 text-xs text-stone-700 outline-none ring-1 ring-stone-200 dark:bg-slate-700 dark:text-slate-200 dark:ring-slate-600"></select>
+                </div>
             </div>
         </div>
 
@@ -69,12 +73,14 @@
 
 @push('scripts')
 @if ($serviceOnline)
+<script src="{{ asset('js/camera-select.js') }}"></script>
 <script>
 (function () {
     const REQUIRED = {{ (int) config('facenet.samples_required') }};
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
+    const cameraSelect = document.getElementById('bioCameraSelect');
     const camRing = document.getElementById('camRing');
     const scanLine = document.getElementById('scanLine');
     const statusText = document.getElementById('statusText');
@@ -199,29 +205,38 @@
         scanTimer = setInterval(scanTick, INTERVAL_MS);
     }
 
-    async function initCamera() {
+    // Coba aktifkan FaceDetector API bila didukung browser (sekali saja).
+    if ('FaceDetector' in window) {
+        try { faceDetector = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 }); } catch (_) { faceDetector = null; }
+    }
+
+    const camera = window.CameraSelect.create({
+        video: video,
+        select: cameraSelect,
+        onReady: function (stream, info) {
+            if (info && info.manual) {
+                // Pengguna berpindah kamera manual — jangan restart otomatis bila
+                // pemindaian sedang berjalan; cukup lanjut dengan stream baru.
+                return;
+            }
+            if (info && info.usedFallback) {
+                setStatus('<i class="fa-solid fa-mobile-screen mr-1"></i> Kamera utama tak tersedia — memakai DroidCam. Pemindaian dimulai...', 'text-amber-600');
+            } else {
+                setStatus('<i class="fa-solid fa-face-viewfinder mr-1"></i> Kamera siap. Pemindaian otomatis dimulai...', 'text-forest dark:text-cyan-400');
+            }
+            setTimeout(startScanning, 600);
+        },
+        onError: function (err, message) {
+            setRing('error');
+            setStatus('<i class="fa-solid fa-triangle-exclamation mr-1"></i> ' + message, 'text-red-600');
+            console.error(err);
+        },
+    });
+
+    function initCamera() {
         setStatus('<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Menyiapkan kamera...');
         setRing('idle');
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
-            });
-            video.srcObject = stream;
-
-            // Coba aktifkan FaceDetector API bila didukung browser
-            if ('FaceDetector' in window) {
-                try { faceDetector = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 }); } catch (_) { faceDetector = null; }
-            }
-
-            video.onloadedmetadata = () => {
-                setStatus('<i class="fa-solid fa-face-viewfinder mr-1"></i> Kamera siap. Pemindaian otomatis dimulai...', 'text-forest dark:text-cyan-400');
-                setTimeout(startScanning, 600);
-            };
-        } catch (err) {
-            setRing('error');
-            setStatus('<i class="fa-solid fa-triangle-exclamation mr-1"></i> Kamera tidak dapat diakses. Izinkan akses kamera di browser.', 'text-red-600');
-            console.error(err);
-        }
+        camera.start();
     }
 
     restartBtn.addEventListener('click', startScanning);

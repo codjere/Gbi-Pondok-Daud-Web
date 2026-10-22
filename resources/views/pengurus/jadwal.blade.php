@@ -43,14 +43,19 @@
             <div>
                 <label class="mb-1 block text-xs font-semibold text-stone-600 dark:text-slate-400">Pembicara</label>
                 <select name="pembicara" required class="w-full rounded-xl bg-gradient-to-r from-cyan-50 to-sky-50 px-3 py-2.5 text-sm shadow-sm ring-1 ring-cyan-200/60 outline-none focus:ring-2 focus:ring-cyan-500/40 dark:from-slate-600 dark:to-slate-500 dark:text-white dark:ring-slate-500">
-                    <option value="Pdt. Samsu Hadi">Pdt. Samsu Hadi</option>
-                    <option value="Pdt. Lisna Tappi">Pdt. Lisna Tappi</option>
                     <option value="Pdt. Ficky Benyaminsz">Pdt. Ficky Benyaminsz</option>
+                    <option value="Pdt. Lisna Tappi">Pdt. Lisna Tappi</option>
+                    <option value="Pdt. Samsu Hadi">Pdt. Samsu Hadi</option>
                 </select>
             </div>
             <div>
                 <label class="mb-1 block text-xs font-semibold text-stone-600 dark:text-slate-400">Batas Kuota</label>
                 <input type="number" name="batas_kuota" value="{{ old('batas_kuota', 200) }}" required min="1" class="w-full rounded-xl bg-gradient-to-r from-cyan-50 to-sky-50 px-3 py-2.5 text-sm shadow-sm ring-1 ring-cyan-200/60 outline-none focus:ring-2 focus:ring-cyan-500/40 dark:from-slate-600 dark:to-slate-500 dark:text-white dark:ring-slate-500">
+            </div>
+            <div class="sm:col-span-2 lg:col-span-3">
+                <label class="mb-1 block text-xs font-semibold text-stone-600 dark:text-slate-400">Link Meeting / Zoom (Opsional)</label>
+                <input type="url" name="meeting_link" value="{{ old('meeting_link') }}" placeholder="https://zoom.us/j/..."
+                       class="w-full rounded-xl bg-gradient-to-r from-cyan-50 to-sky-50 px-3 py-2.5 text-sm shadow-sm ring-1 ring-cyan-200/60 outline-none focus:ring-2 focus:ring-cyan-500/40 dark:from-slate-600 dark:to-slate-500 dark:text-white dark:ring-slate-500">
             </div>
             <div class="sm:col-span-2 lg:col-span-3">
                 <button type="submit" class="rounded-xl bg-gradient-to-r from-gold to-amber-500 px-6 py-2.5 text-sm font-bold text-forest shadow-md hover:shadow-lg transition hover:from-amber-400 hover:to-orange-400">
@@ -76,7 +81,12 @@
                 <tbody class="divide-y divide-cyan-200/50 dark:divide-slate-600">
                     @foreach ($jadwals as $jadwal)
                         <tr class="hover:bg-gradient-to-r hover:from-cyan-50 hover:to-sky-50 dark:hover:from-slate-600 dark:hover:to-slate-700">
-                            <td class="px-5 py-4 font-semibold text-forest dark:text-cyan-400">{{ $jadwal->nama_sesi }}</td>
+                            <td class="px-5 py-4 font-semibold text-forest dark:text-cyan-400">
+                                {{ $jadwal->nama_sesi }}
+                                @if ($jadwal->meeting_link)
+                                    <a href="{{ $jadwal->meeting_link }}" target="_blank" rel="noopener" class="ml-1 text-xs font-medium text-cyan-600 hover:underline dark:text-cyan-400"><i class="fa-solid fa-video"></i> Link</a>
+                                @endif
+                            </td>
                             <td class="px-5 py-4 text-stone-600 dark:text-slate-400">{{ $jadwal->tanggal->format('d M Y') }} · {{ $jadwal->jamMulaiFormatted() }}</td>
                             <td class="px-5 py-4 text-stone-600 dark:text-slate-400">{{ $jadwal->pembicara }}</td>
                             <td class="px-5 py-4 font-medium text-stone-600 dark:text-slate-400">{{ $jadwal->jumlahTerisi() }}/{{ $jadwal->batas_kuota }}</td>

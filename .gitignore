@@ -22,3 +22,8 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# File infrastruktur lokal (Cloudflare Tunnel) - jangan dipush ke repo publik
+/PANDUAN_CLOUDFLARE_NAMED_TUNNEL.md
+/nyalakan-tunnel.bat
+/matikan-tunnel.bat

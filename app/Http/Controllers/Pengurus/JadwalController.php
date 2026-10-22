@@ -26,6 +26,7 @@ class JadwalController extends Controller
             'pembicara' => ['required', 'string', 'max:255'],
             'batas_kuota' => ['required', 'integer', 'min:1'],
             'lokasi' => ['nullable', 'string', 'max:255'],
+            'meeting_link' => ['nullable', 'url', 'max:255'],
         ]);
 
         JadwalIbadah::create([

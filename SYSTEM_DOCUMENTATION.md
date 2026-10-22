@@ -2152,9 +2152,48 @@ Login demo: `admin@gbipondokdaud.id` (pengurus) & jemaat seperti `andi@email.com
 
 ---
 
-### **4. Verifikasi Fitur Terbaru**
+### **4. Pemilihan Kamera + Fallback DroidCam (Face Recognition)**
 
-- **Automated test**: ditambah test foto profil (upload/hapus/validasi) di `JemaatTest.php` dan test laporan (breakdown + export PDF/Excel) di `PengurusTest.php`. Total suite menjadi **85 feature test**, semua lolos.
+Ketiga alur face recognition (registrasi biometrik, login wajah, dan absen pengurus) kini mendukung **pemilihan kamera**: kamera bawaan/USB sebagai **opsi utama**, dan **DroidCam** (kamera HP sebagai virtual webcam) sebagai **opsi kedua / fallback otomatis** bila kamera utama tidak tersedia.
+
+#### **4.1 Helper bersama**
+
+**File:** `public/js/camera-select.js` (`window.CameraSelect`)
+
+Sebelumnya tiap halaman memanggil `navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', ... } })` secara statis — tanpa pemilihan device. Logika ini dipindah ke satu helper agar tidak diduplikasi di tiga tempat. Fungsinya:
+
+- `enumerateDevices()` mengisi dropdown kamera (hanya muncul bila ada >1 kamera). Label `videoinput` yang mengandung pola `droidcam|iriun|epoccam|ip camera` dianggap DroidCam dan ditandai `(DroidCam)`.
+- Urutan prioritas: webcam biasa dulu (utama), DroidCam di belakang.
+- Alur start: coba kamera utama → bila gagal (`NotFoundError`/`NotAllowedError`/`OverconstrainedError`/`NotReadableError`), otomatis cari device DroidCam dan pakai itu.
+- Error handling membedakan `err.name` menjadi pesan Indonesia yang spesifik (ditolak, tidak terdeteksi, sedang dipakai aplikasi lain).
+
+```js
+const camera = window.CameraSelect.create({
+    video: videoEl,
+    select: dropdownEl,
+    onReady: (stream, info) => { /* info.usedFallback / info.manual */ },
+    onError: (err, message) => { /* tampilkan message */ },
+});
+camera.start();   // auto-pilih kamera utama, fallback DroidCam
+camera.stop();    // hentikan stream
+camera.useDevice(deviceId); // pindah kamera manual (via dropdown)
+```
+
+#### **4.2 Integrasi**
+
+Tiga view memuat helper via `<script src="{{ asset('js/camera-select.js') }}">` di `@push('scripts')` lalu memakai `CameraSelect.create(...)`:
+
+- `resources/views/pengurus/absen.blade.php` — dropdown `#cameraSelect` di bawah bar status kamera.
+- `resources/views/auth/login.blade.php` — dropdown `#faceCameraSelect` di modal login wajah.
+- `resources/views/auth/biometric.blade.php` — dropdown `#bioCameraSelect` di bawah ring kamera.
+
+**Catatan penggunaan DroidCam:** jalankan aplikasi DroidCam di HP + klien DroidCam di PC sehingga muncul sebagai webcam virtual di OS. Browser lalu melihatnya lewat `enumerateDevices()`. Label device baru muncul setelah izin kamera diberikan, jadi dropdown terisi penuh setelah kamera pertama kali aktif.
+
+---
+
+### **5. Verifikasi Fitur Terbaru**
+
+- **Automated test**: ditambah test foto profil (upload/hapus/validasi) di `JemaatTest.php` dan test laporan (breakdown + export PDF/Excel) di `PengurusTest.php`. Total suite menjadi **89 feature test**, semua lolos.
 - **Smoke test manual**: 22 route (jemaat & pengurus) diuji terhadap database ber-seed, termasuk laporan + export, Alkitab hingga **Wahyu 22**, dan chatbot — seluruhnya mengembalikan 200/302 (tanpa error 500).
 
 > Catatan: route baca Alkitab adalah `GET /jemaat/alkitab/kitab/{kitabId}/pasal/{nomorPasal}` (name `jemaat.alkitab.baca`).
@@ -2162,10 +2201,16 @@ Login demo: `admin@gbipondokdaud.id` (pengurus) & jemaat seperti `andi@email.com
 ---
 
 **Last Updated:** 2026-09-10
-**Version:** 1.2
+**Version:** 1.3
 **Author:** Devin AI Assistant
 
 ### **Changelog**
+
+**v1.3 (2026-09-10)**
+- Tambah fitur **gambar warta/renungan** (kolom `gambar`, upload di form pengurus, render di detail/daftar/dashboard).
+- Perbaiki **URL aset publik** (disk `public` jadi relatif `/storage`, bisa di-override `STORAGE_URL`) agar gambar & avatar terbaca baik via `php artisan serve` maupun tunnel.
+- Tambah **pemilihan kamera + fallback DroidCam** untuk face recognition (helper `public/js/camera-select.js`) di registrasi biometrik, login wajah, dan absen pengurus. Kamera utama = webcam; DroidCam = opsi kedua/fallback otomatis.
+- Suite test: **89 feature test**, semua lolos.
 
 **v1.2 (2026-09-10)**
 - Tambah section **Fitur Terbaru (v1.2)**: Foto Profil (avatar) jemaat, Laporan Kehadiran yang diperkaya (export PDF & Excel, grafik tren, breakdown metode verifikasi), dan Pengayaan Data Demo.

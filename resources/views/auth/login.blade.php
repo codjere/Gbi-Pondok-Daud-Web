@@ -115,6 +115,11 @@
             </div>
         </div>
 
+        <div data-camera-select-wrap class="mx-auto mb-3 hidden max-w-[260px] items-center gap-2">
+            <label for="faceCameraSelect" class="text-[11px] font-semibold text-stone-500 dark:text-slate-400"><i class="fa-solid fa-camera mr-1"></i>Kamera</label>
+            <select id="faceCameraSelect" class="flex-1 rounded-lg bg-stone-100 px-2.5 py-1.5 text-xs text-stone-700 outline-none ring-1 ring-stone-200 dark:bg-slate-700 dark:text-slate-200 dark:ring-slate-600"></select>
+        </div>
+
         <p id="faceStatus" class="text-sm font-semibold text-forest dark:text-cyan-400">
             <i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Menyiapkan kamera...
         </p>
@@ -131,6 +136,7 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('js/camera-select.js') }}"></script>
 <script>
 // ===== Tab switching: Email vs Wajah =====
 (function () {
@@ -166,6 +172,7 @@
     const canvas = document.getElementById('faceCanvas');
     const ring = document.getElementById('faceRing');
     const statusEl = document.getElementById('faceStatus');
+    const cameraSelect = document.getElementById('faceCameraSelect');
     const fallbackBox = document.getElementById('faceFallback');
     const fallbackToPassword = document.getElementById('fallbackToPassword');
     const retryFace = document.getElementById('retryFace');
@@ -191,32 +198,41 @@
         return canvas.toDataURL('image/jpeg', 0.82);
     }
 
-    async function openModal() {
+    const camera = window.CameraSelect.create({
+        video: video,
+        select: cameraSelect,
+        onReady: function (s, info) {
+            // Mulai (atau mulai ulang) loop pemindaian saat kamera siap.
+            if (timer) { clearInterval(timer); timer = null; }
+            if (info && info.usedFallback) {
+                setStatus('<i class="fa-solid fa-mobile-screen mr-1"></i> Memakai DroidCam — posisikan wajah di tengah', 'text-amber-600');
+            } else {
+                setStatus('<i class="fa-solid fa-magnifying-glass mr-1"></i> Memindai wajah — posisikan di tengah', 'text-amber-600');
+            }
+            setRing('scanning');
+            timer = setInterval(scanOnce, INTERVAL_MS);
+            scanOnce();
+        },
+        onError: function (err, message) {
+            setRing('err');
+            setStatus('<i class="fa-solid fa-triangle-exclamation mr-1"></i> ' + message + ' Gunakan kata sandi.', 'text-red-600');
+            fallbackBox.classList.remove('hidden');
+        },
+    });
+
+    function openModal() {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         fallbackBox.classList.add('hidden');
         fails = 0; done = false;
         setStatus('<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Menyiapkan kamera...');
         setRing('idle');
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } });
-            video.srcObject = stream;
-            video.onloadedmetadata = () => {
-                setStatus('<i class="fa-solid fa-magnifying-glass mr-1"></i> Memindai wajah — posisikan di tengah', 'text-amber-600');
-                setRing('scanning');
-                timer = setInterval(scanOnce, INTERVAL_MS);
-                scanOnce();
-            };
-        } catch (err) {
-            setRing('err');
-            setStatus('<i class="fa-solid fa-triangle-exclamation mr-1"></i> Kamera tidak dapat diakses. Gunakan kata sandi.', 'text-red-600');
-            fallbackBox.classList.remove('hidden');
-        }
+        camera.start();
     }
 
     function stopCamera() {
         if (timer) { clearInterval(timer); timer = null; }
-        if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+        camera.stop();
     }
     function closeModal() {
         stopCamera();

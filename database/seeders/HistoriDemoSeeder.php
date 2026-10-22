@@ -95,7 +95,7 @@ class HistoriDemoSeeder extends Seeder
                 [
                     'jam_mulai' => '08:00',
                     'jam_selesai' => '10:00',
-                    'pembicara' => 'Pdt. Samsu Hadi',
+                    'pembicara' => 'Pdt. Ficky Benyaminsz',
                     'lokasi' => 'Ruang Utama GBI Pondok Daud',
                     'batas_kuota' => 200,
                     'status' => 'selesai',
